@@ -1,0 +1,42 @@
+﻿@page "/carousel"
+
+<PageTitle>Carousel</PageTitle>
+
+<h1>Carousel</h1>
+@if (car.Images != null)
+    {
+<button @onclick="PreviousImage">Previous</button>
+<button @onclick="NextImage">Next</button>
+
+<div class="carousel">
+    @for (var i = 0; i < car.Images.Count; i++)
+        {
+            var path = $"/Assets/Carousel/GT3-1.webp";
+            <div class="carousel-item @(currentIndex == i ? "active" : "")">
+                <img src="@path" alt="Image @i" />
+            </div>
+        }
+</div>
+    }
+
+@code {
+    public Car car { get; set; } = new Car();
+    
+    private int currentIndex = 0;
+
+    protected override void OnInitialized()
+    {
+        car.Images = Directory.GetFiles("./wwwroot/Assets/Carousel").Where(file => file.EndsWith(".webp")).ToList();
+
+    }
+
+    private void NextImage()
+    {
+        currentIndex = (currentIndex + 1) % car.Images.Count;
+    }
+
+    private void PreviousImage()
+    {
+        currentIndex = (currentIndex - 1 + car.Images.Count) % car.Images.Count;
+    }
+}
