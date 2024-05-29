@@ -1,0 +1,15 @@
+﻿.d-flex {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between; 
+}
+
+.card {
+    flex: 1 1 auto;
+    flex-basis: 200px;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 20px;
+}

@@ -1,0 +1,305 @@
+﻿@page "/charts"
+<ChartsNav></ChartsNav>
+
+<div class="d-flex flex-row">
+    <div class="card">
+        <BarChart @ref="barChart" />
+        <div class="card-body">
+            <h5 class="card-title">Bar Charts</h5>
+            <p class="card-text">Et søjlediagram bruges til at sammenligne forskellige kategorier af data. Hver søjle repræsenterer en kategori, og højden (eller længden) af søjlen viser værdien for denne kategori. Dette er ideelt til at vise diskrete data og sammenligne mængder mellem forskellige grupper.</p>
+            <a href="BarCharts" class="btn btn-primary">Se flere Søjlediagrammer</a>
+        </div>
+    </div>
+    <div class="card">
+        <LineChart @ref="lineChart" />
+        <div class="card-body">
+            <h5 class="card-title">Line Charts</h5>
+            <p class="card-text">Et linjediagram bruges til at vise data over tid, og det hjælper med at identificere tendenser eller mønstre i dataene. Hver datapunkt forbindes med en linje, som gør det nemt at se ændringer og udvikling over perioder.</p>
+            <a href="LineCharts" class="btn btn-primary">Se flere linje Linjediagrammer </a>
+        </div>
+    </div>
+</div>
+<div class="d-flex flex-row">
+    <div class="card">
+        <PieChart @ref="pieChart" Width="500" Class="mb-5" />
+        <div class="card-body">
+            <h5 class="card-title">Pie Charts</h5>
+            <p class="card-text">Et cirkeldiagram bruges til at vise en helhed opdelt i dele. Hver del af cirklen repræsenterer en andel af det samlede, hvilket gør det nemt at visualisere procentvise fordelinger eller proportioner mellem forskellige kategorier.</p>
+            <a href="PieCharts" class="btn btn-primary">Se flere cirkeldiagrammer </a>
+        </div>
+    </div>
+    <div class="card">
+        <DoughnutChart @ref="doughnutChart" Width="500" Class="mb-5" />
+        <div class="card-body">
+            <h5 class="card-title">Doughnut Charts</h5>
+            <p class="card-text">Et Donutdiagrammer er en variation af et cirkeldiagrammer, men med et hul i midten. Det bruges til at vise proportioner og andele, men kan være mere fleksibel til at vise flere datasæt eller kategorier inden for den samme cirkel.</p>
+            <a href="DoughnutCharts" class="btn btn-primary">Se flere Donutdiagrammer </a>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private BarChart barChart = default!;
+    private LineChart lineChart = default!;
+
+    private PieChart pieChart = default!;
+    private PieChartOptions pieChartOptions = default!;
+    private ChartData chartData = default!;
+    private string[]? backgroundColors;
+
+    private DoughnutChart doughnutChart = default!;
+    private DoughnutChartOptions doughnutChartOptions = default!;
+    
+    private int datasetsCount = 0;
+    private int dataLabelsCount = 0;
+
+    private Random random = new();
+
+    protected override void OnInitialized()
+    {
+        backgroundColors = ColorBuilder.CategoricalTwelveColors;
+        chartData = new ChartData { Labels = GetDefaultDataLabels(4), Datasets = GetDefaultDataSets(1) };
+
+        pieChartOptions = new();
+        pieChartOptions.Responsive = true;
+        pieChartOptions.Plugins.Title!.Text = "2022 - Sales";
+        pieChartOptions.Plugins.Title.Display = true;
+        doughnutChartOptions = new();
+        doughnutChartOptions.Responsive = true;
+        doughnutChartOptions.Plugins.Title.Text = "2022 - Sales";
+        doughnutChartOptions.Plugins.Title.Display = true;
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await RenderManhattanAsync();
+            await RenderWormAsync();
+            await pieChart.InitializeAsync(chartData, pieChartOptions);
+            await doughnutChart.InitializeAsync(chartData, doughnutChartOptions);
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task RandomizeAsync()
+    {
+        if (chartData is null || chartData.Datasets is null || !chartData.Datasets.Any()) return;
+
+        var newDatasets = new List<IChartDataset>();
+
+        foreach (var dataset in chartData.Datasets)
+        {
+            if (dataset is PieChartDataset pieChartDataset
+                && pieChartDataset is not null
+                && pieChartDataset.Data is not null)
+            {
+                var count = pieChartDataset.Data.Count;
+
+                var newData = new List<double>();
+                for (var i = 0; i < count; i++)
+                {
+                    newData.Add(random.Next(0, 100));
+                }
+
+                pieChartDataset.Data = newData;
+                newDatasets.Add(pieChartDataset);
+            }
+        }
+
+        chartData.Datasets = newDatasets;
+
+        await pieChart.UpdateAsync(chartData, pieChartOptions);
+        await doughnutChart.UpdateAsync(chartData, doughnutChartOptions);
+    }
+
+    private async Task RenderManhattanAsync()
+    {
+        var data = new ChartData
+            {
+                Labels = new List<string> { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20" },
+                Datasets = new List<IChartDataset>()
+                {
+                    new BarChartDataset()
+                    {
+                        Label = "India",
+                        Data = new List<double>{ 9, 11, 9, 4, 17, 16, 9, 11, 5, 14, 15, 6, 15, 9, 6, 8, 13, 3, 4, 11 },
+                        BackgroundColor = new List<string>{ "rgb(88, 80, 141)" },
+                        CategoryPercentage = 0.8,
+                        BarPercentage = 1,
+                    },
+                    new BarChartDataset()
+                    {
+                        Label = "England",
+                        Data = new List<double>{ 1, 0, 7, 11, 5, 2, 13, 8, 9, 10, 7, 13, 7, 5, 9, 5, 10, 5, 11, 2 },
+                        BackgroundColor = new List<string> { "rgb(255, 166, 0)" },
+                        CategoryPercentage = 0.8,
+                        BarPercentage = 1,
+                    }
+                }
+            };
+
+        var options = new BarChartOptions();
+
+        options.Interaction.Mode = InteractionMode.Index;
+
+        options.Plugins.Title!.Text = "MANHATTAN";
+        options.Plugins.Title.Display = true;
+        options.Plugins.Title.Font!.Size = 20;
+
+        options.Responsive = true;
+
+        options.Scales.X!.Title!.Text = "Overs";
+        options.Scales.X.Title.Display = true;
+
+        options.Scales.Y!.Title!.Text = "Runs";
+        options.Scales.Y.Title.Display = true;
+
+        await barChart.InitializeAsync(data, options);
+    }
+
+    private async Task RenderWormAsync()
+    {
+        var data = new ChartData
+            {
+                Labels = new List<string> { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20" },
+                Datasets = new List<IChartDataset>()
+                {
+                    new LineChartDataset()
+                    {
+                        Label = "India",
+                        Data = new List<double>{ 9, 20, 29, 33, 50, 66, 75, 86, 91, 105, 120, 126, 141, 150, 156, 164, 177, 180, 184, 195 },
+                        BackgroundColor = new List<string>{ "rgb(88, 80, 141)" },
+                        BorderColor = new List<string>{ "rgb(88, 80, 141)" },
+                        BorderWidth = new List<double>{2},
+                        HoverBorderWidth = new List<double>{4},
+                        PointBackgroundColor = new List<string>{ "rgb(88, 80, 141)" },
+                        PointBorderColor = new List<string>{ "rgb(88, 80, 141)" },
+                        PointRadius = new List<int>{0}, // hide points
+                        PointHoverRadius = new List<int>{4},
+                    },
+                    new LineChartDataset()
+                    {
+                        Label = "England",
+                        Data = new List<double>{ 1, 1, 8, 19, 24, 26, 39, 47, 56, 66, 75, 88, 95, 100, 109, 114, 124, 129, 140, 142 },
+                        BackgroundColor = new List<string>{ "rgb(255, 166, 0)" },
+                        BorderColor = new List<string>{ "rgb(255, 166, 0)" },
+                        BorderWidth = new List<double>{2},
+                        HoverBorderWidth = new List<double>{4},
+                        PointBackgroundColor = new List<string>{ "rgb(255, 166, 0)" },
+                        PointBorderColor = new List<string>{ "rgb(255, 166, 0)" },
+                        PointRadius = new List<int>{0}, // hide points
+                        PointHoverRadius = new List<int>{4},
+                    }
+                }
+            };
+
+        var options = new LineChartOptions();
+
+        options.Interaction.Mode = InteractionMode.Index;
+
+        options.Plugins.Title!.Text = "WORM";
+        options.Plugins.Title.Display = true;
+        options.Plugins.Title.Font!.Size = 20;
+
+        options.Responsive = true;
+
+        options.Scales.X!.Title!.Text = "Overs";
+        options.Scales.X.Title.Display = true;
+
+        options.Scales.Y!.Title!.Text = "Runs";
+        options.Scales.Y.Title.Display = true;
+
+        await lineChart.InitializeAsync(data, options);
+    }
+    private async Task AddDataAsync()
+    {
+        if (dataLabelsCount >= 12)
+            return;
+
+        if (chartData is null || chartData.Datasets is null)
+            return;
+
+        var data = new List<IChartDatasetData>();
+        foreach (var dataset in chartData.Datasets)
+        {
+            if (dataset is PieChartDataset pieChartDataset)
+                data.Add(new PieChartDatasetData(pieChartDataset.Label, random.Next(0, 100), backgroundColors![dataLabelsCount]));
+        }
+
+        chartData = await pieChart.AddDataAsync(chartData, GetNextDataLabel(), data);
+
+        dataLabelsCount += 1;
+
+    }
+
+    #region Data Preparation
+
+    private List<IChartDataset> GetDefaultDataSets(int numberOfDatasets)
+    {
+        var datasets = new List<IChartDataset>();
+
+        for (var index = 0; index < numberOfDatasets; index++)
+        {
+            datasets.Add(GetRandomPieChartDataset());
+            datasets.Add(GetRandomDoughnutChartDataset());
+        }
+
+        return datasets;
+    }
+
+    private PieChartDataset GetRandomPieChartDataset()
+    {
+        datasetsCount += 1;
+        return new() { Label = $"Team {datasetsCount}", Data = GetRandomData(), BackgroundColor = GetRandomBackgroundColors() };
+    }
+
+    private DoughnutChartDataset GetRandomDoughnutChartDataset()
+    {
+        datasetsCount += 1;
+        return new() { Label = $"Team {datasetsCount}", Data = GetRandomData(), BackgroundColor = GetRandomBackgroundColors() };
+    }
+
+    private List<double> GetRandomData()
+    {
+        var data = new List<double>();
+        for (var index = 0; index < dataLabelsCount; index++)
+        {
+            data.Add(random.Next(0, 100));
+        }
+
+        return data;
+    }
+
+    private List<string> GetRandomBackgroundColors()
+    {
+        var colors = new List<string>();
+        for (var index = 0; index < dataLabelsCount; index++)
+        {
+            colors.Add(backgroundColors![index]);
+        }
+
+        return colors;
+    }
+
+    private List<string> GetDefaultDataLabels(int numberOfLabels)
+    {
+        var labels = new List<string>();
+        for (var index = 0; index < numberOfLabels; index++)
+        {
+            labels.Add(GetNextDataLabel());
+            dataLabelsCount += 1;
+        }
+
+        return labels;
+    }
+
+    private string GetNextDataLabel() => $"Product {dataLabelsCount + 1}";
+
+    private string GetNextDataBackgrounfColor() => backgroundColors![dataLabelsCount];
+
+    #endregion  Data Preparation
+}
