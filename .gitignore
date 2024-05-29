@@ -1,0 +1,8 @@
+./bin
+.vs
+./obj
+.bin
+.obj
+
+/Blazor/obj
+/Blazor/bin
