@@ -1,3 +1,5 @@
-.bin
+./bin
 .vs
+./obj
+.bin
 .obj
