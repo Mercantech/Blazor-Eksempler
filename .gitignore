@@ -1,8 +1,8 @@
-./bin
 .vs
-./obj
-.bin
-.obj
 
 /Blazor/obj
 /Blazor/bin
+/ThreeJS/obj
+/ThreeJS/bin
+/DomainModels/obj
+/DomainModels/bin

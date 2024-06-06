@@ -21,12 +21,12 @@
 
 @code {
     public Car car { get; set; } = new Car();
-    
+
     private int currentIndex = 0;
 
     protected override void OnInitialized()
     {
-        car.Images = Directory.GetFiles("./wwwroot/Assets/Carousel").Where(file => file.EndsWith(".webp")).ToList();
+        car.Images.Add("GT3-1.webp");
 
     }
 

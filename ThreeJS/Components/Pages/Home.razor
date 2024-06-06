@@ -1,0 +1,26 @@
+﻿@page "/"
+
+@implements IAsyncDisposable
+
+<h3>Three.js in Blazor</h3>
+<canvas id="threeCanvas" width="800" height="600"></canvas>
+
+@code {
+    private ElementReference _canvasRef;
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("threeInterop.initialize", "threeCanvas");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Dispose resources if necessary
+    }
+}
