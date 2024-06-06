@@ -1,0 +1,44 @@
+﻿@page "/modal"
+
+<Modal @ref="xlModal" title="Extra large modal" Size="ModalSize.ExtraLarge">
+    <BodyTemplate>...</BodyTemplate>
+</Modal>
+<Modal @ref="lgModal" title="Large modal" Size="ModalSize.Large">
+    <BodyTemplate>...</BodyTemplate>
+</Modal>
+<Modal @ref="smModal" title="Small modal" Size="ModalSize.Small">
+    <BodyTemplate>...</BodyTemplate>
+</Modal>
+
+<Button Color="ButtonColor.Primary" @onclick="() => xlModal.ShowAsync()">Extra large modal</Button>
+<Button Color="ButtonColor.Primary" @onclick="() => lgModal.ShowAsync()">Large modal</Button>
+<Button Color="ButtonColor.Primary" @onclick="() => smModal.ShowAsync()">Small modal</Button>
+
+<br /><br />
+
+<Modal @ref="modal" />
+
+<Button Color="ButtonColor.Primary" @onclick="ShowEmployeeComponent">Show Employee Component</Button>
+
+<div class="mt-3 bg-success text-white bg-opacity-75">
+    @message
+</div>
+
+
+@code {
+    private Modal xlModal = default!;
+    private Modal lgModal = default!;
+    private Modal smModal = default!;
+    private Modal modal = default!;
+    private string? message;
+
+    private async Task ShowEmployeeComponent()
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("EmployeeId", 322);
+        parameters.Add("OnclickCallback", EventCallback.Factory.Create<MouseEventArgs>(this, ShowDTMessage));
+        await modal.ShowAsync<EmployeeComponent>(title: "Employee Details", parameters: parameters);
+    }
+
+    private void ShowDTMessage(MouseEventArgs e) => message = $"The current DT is: {DateTime.Now}.";
+}

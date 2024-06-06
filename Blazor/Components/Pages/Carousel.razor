@@ -4,29 +4,33 @@
 
 <h1>Carousel</h1>
 @if (car.Images != null)
-    {
-<button @onclick="PreviousImage">Previous</button>
-<button @onclick="NextImage">Next</button>
+{
+    <div class="carousel-container">
+        <button class="carousel-button prev" @onclick="PreviousImage">Previous</button>
+        <button class="carousel-button next" @onclick="NextImage">Next</button>
 
-<div class="carousel">
-    @for (var i = 0; i < car.Images.Count; i++)
-        {
-            var path = $"/Assets/Carousel/GT3-1.webp";
-            <div class="carousel-item @(currentIndex == i ? "active" : "")">
-                <img src="@path" alt="Image @i" />
-            </div>
-        }
-</div>
-    }
+        <div class="carousel">
+            @for (var i = 0; i < car.Images.Count; i++)
+            {
+                var path = $"/Assets/Carousel/GT3-{i}.webp";
+                <div class="carousel-item @(currentIndex == i ? "active" : "")">
+                    <img src="@path" alt="Image @i" />
+                </div>
+            }
+        </div>
+    </div>
+}
+
 
 @code {
-    public Car car { get; set; } = new Car();
+    public Car car { get; set; } = new Car() { Images = new List<string>() };
 
     private int currentIndex = 0;
 
     protected override void OnInitialized()
     {
-        car.Images.Add("GT3-1.webp");
+        for (var i = 0; i <= 12; i++)
+        car.Images.Add($"GT3-{i}.webp");
 
     }
 
@@ -40,3 +44,59 @@
         currentIndex = (currentIndex - 1 + car.Images.Count) % car.Images.Count;
     }
 }
+
+
+<style>
+    .carousel-container {
+        position: relative;
+        max-width: 800px;
+        margin: auto;
+    }
+
+    .carousel {
+        display: flex;
+        overflow: hidden;
+    }
+
+    .carousel-item {
+        flex: 0 0 100%;
+        display: none;
+        justify-content: center;
+        align-items: center;
+    }
+
+        .carousel-item.active {
+            display: flex;
+        }
+
+        .carousel-item img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+
+    .carousel-button {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        z-index: 1;
+    }
+
+        .carousel-button.prev {
+            left: 10px;
+        }
+
+        .carousel-button.next {
+            right: 10px;
+        }
+
+        .carousel-button:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+</style> 
