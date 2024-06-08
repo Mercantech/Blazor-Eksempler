@@ -1,4 +1,6 @@
 using Blazor.Components;
+using dymaptic.GeoBlazor.Core;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace Blazor
 {
@@ -9,14 +11,23 @@ namespace Blazor
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddBlazorBootstrap();
+            builder.Services.AddGeoBlazor(builder.Configuration);
+
+
 
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
 
             var app = builder.Build();
-            
 
+            //GeoBlazor
+            var provider = new FileExtensionContentTypeProvider();
+            provider.Mappings[".wsv"] = "application/octet-stream";
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                ContentTypeProvider = provider
+            });
 
 
             // Configure the HTTP request pipeline.

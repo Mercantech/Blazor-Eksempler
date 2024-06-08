@@ -5,6 +5,9 @@
 <h1>Carousel</h1>
 @if (car.Images != null)
 {
+    <button @onclick="ToggleScroll">
+        @(isScrollEnabled ? "Disable Scroll" : "Enable Scroll")
+    </button>
     <div class="carousel-container" @onwheel="OnScroll">
         <button class="carousel-button prev" @onclick="PreviousImage">Previous</button>
         <button class="carousel-button next" @onclick="NextImage">Next</button>
@@ -21,17 +24,16 @@
     </div>
 }
 
-
 @code {
     public Car car { get; set; } = new Car() { Images = new List<string>() };
 
     private int currentIndex = 0;
+    private bool isScrollEnabled = true;
 
     protected override void OnInitialized()
     {
         for (var i = 0; i <= 12; i++)
-        car.Images.Add($"GT3-{i}.webp");
-
+            car.Images.Add($"GT3-{i}.webp");
     }
 
     private void NextImage()
@@ -46,16 +48,23 @@
 
     private void OnScroll(WheelEventArgs e)
     {
-        if (e.DeltaY > 0)
+        if (isScrollEnabled)
         {
-            NextImage();
-        }
-        else
-        {
-            PreviousImage();
+            if (e.DeltaY > 0)
+            {
+                NextImage();
+            }
+            else
+            {
+                PreviousImage();
+            }
         }
     }
 
+    private void ToggleScroll()
+    {
+        isScrollEnabled = !isScrollEnabled;
+    }
 }
 
 
