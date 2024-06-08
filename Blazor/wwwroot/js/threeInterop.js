@@ -16,7 +16,7 @@ window.threeInterop = {
 
   
         const loader = new THREE.GLTFLoader();
-        const file = 'https://alex.magsapi.com/nvidia3090.glb'
+        const file = 'https://alex.magsapi.com/4090.glb'
         loader.load(file, function (gltf) {
             const model = gltf.scene;
             scene.add(model);

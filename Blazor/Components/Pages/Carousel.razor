@@ -5,7 +5,7 @@
 <h1>Carousel</h1>
 @if (car.Images != null)
 {
-    <div class="carousel-container">
+    <div class="carousel-container" @onwheel="OnScroll">
         <button class="carousel-button prev" @onclick="PreviousImage">Previous</button>
         <button class="carousel-button next" @onclick="NextImage">Next</button>
 
@@ -43,13 +43,26 @@
     {
         currentIndex = (currentIndex - 1 + car.Images.Count) % car.Images.Count;
     }
+
+    private void OnScroll(WheelEventArgs e)
+    {
+        if (e.DeltaY > 0)
+        {
+            NextImage();
+        }
+        else
+        {
+            PreviousImage();
+        }
+    }
+
 }
 
 
 <style>
     .carousel-container {
         position: relative;
-        max-width: 800px;
+        max-width: 1200px;
         margin: auto;
     }
 
@@ -71,7 +84,7 @@
 
         .carousel-item img {
             width: 100%;
-            height: 400px;
+            height: 100%;
             object-fit: cover;
         }
 
