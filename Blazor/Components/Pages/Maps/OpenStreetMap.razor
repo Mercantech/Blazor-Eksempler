@@ -1,0 +1,24 @@
+﻿@page "/map"
+@inject IJSRuntime JSRuntime
+
+<h3>OpenStreetMap med Blazor</h3>
+
+<div id="map" style="height: 600px;"></div>
+
+@code {
+    double _latitude = 56.46566959338588;
+    double _longitude = 9.411976562074097;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await InitializeMapAsync();
+        }
+    }
+
+    private async Task InitializeMapAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("initMap", _latitude, _longitude, "Your Location");
+    }
+}

@@ -1,0 +1,111 @@
+﻿@page "/geolocation"
+@inject IJSRuntime JSRuntime
+
+<SensorNav></SensorNav><br />
+
+<h1>Geografisk position (GPS)</h1>
+
+<div class="container">
+    <div class="left-panel">
+        <p>Latitude: @_latitude</p>
+        <p>Longitude: @_longitude</p>
+        <p>Fejlbesked: @ErrorMessage</p>
+        <button @onclick="GetGeoLocation">Hent GPS-koordinater</button><br /><br />
+        <button @onclick="GetRandomGeoLocation">Generer tilfældige koordinater</button>
+    </div>
+    <div class="right-panel" id="map" style="height: 600px;"></div>
+</div>
+
+@code {
+    double _latitude = 56.46566959338588;
+    double _longitude = 9.411976562074097;
+    string popup = "Mercantec Datahouse";
+    int _zoom = 14;
+
+    string ErrorMessage { get; set; }
+
+    async Task GetGeoLocation()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("getGeoLocation", DotNetObjectReference.Create(this));
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    [JSInvokable]
+    public void ReceiveGeoLocation(double latitude, double longitude)
+    {
+        _latitude = latitude;
+        _longitude = longitude;
+        popup = "Din lokation!";
+        ErrorMessage = "";
+        UpdateMap();
+    }
+
+    public void ReceiveGeoLocationError(string error)
+    {
+        ErrorMessage = error;
+    }
+
+    private async Task InitializeMapAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("initMap", _latitude, _longitude, popup);
+    }
+
+    private async void UpdateMap()
+    {
+        await JSRuntime.InvokeVoidAsync("updateMap", _latitude, _longitude, popup);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await InitializeMapAsync();
+        }
+    }
+
+    public void GetRandomGeoLocation()
+    {
+        Random random = new Random();
+        _latitude = random.NextDouble() * (90.0 - (-90.0)) - 90.0;
+        _longitude = random.NextDouble() * (180.0 - (-180.0)) - 180.0;
+        ErrorMessage = "";
+        popup = "Komplet tilfældig lokation!";
+
+        UpdateMap();
+    }
+}
+
+
+<style>
+    .container {
+        display: flex;
+        flex-direction: row;
+        height: 600px;
+    }
+
+    .left-panel {
+        flex: 1;
+        max-width: 300px; 
+        padding: 20px;
+    }
+
+    .right-panel {
+        flex: 3;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .map-view {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+    }
+</style>

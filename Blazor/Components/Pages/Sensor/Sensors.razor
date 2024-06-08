@@ -1,0 +1,36 @@
+﻿@page "/Sensor"
+
+<SensorNav></SensorNav><br />
+
+<h2>Sensorer som man kan få adgang til via Browseren</h2>
+<ul class="sensor-list">
+    <li class="sensor-item"> <a href="geolocation">Geografisk position (GPS) </a> - Adgang via JavaScript Geolocation API </li>
+    <li class="sensor-item">Accelerometer - Adgang via JavaScript DeviceMotionEvent API</li>
+    <li class="sensor-item">Gyroskop - Adgang via JavaScript DeviceOrientationEvent API</li>
+    <li class="sensor-item">Magnetometer (kompass) - Adgang via JavaScript DeviceOrientationEvent API</li>
+    <li class="sensor-item">Nærhedssensor - Adgang via JavaScript DeviceProximityEvent API</li>
+    <li class="sensor-item">Lysensor - Adgang via JavaScript AmbientLightSensor API</li>
+</ul>
+
+<style>
+    .sensor-list {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .sensor-item {
+        margin-bottom: 10px;
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        padding: 10px;
+    }
+
+        .sensor-item a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+            .sensor-item a:hover {
+                text-decoration: underline;
+            }
+</style>

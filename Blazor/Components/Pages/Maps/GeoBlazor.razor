@@ -1,0 +1,29 @@
+﻿@page "/GeoBlazor"
+
+<h1> Kort med GeoBlazor</h1>
+
+<MapView Class="map-view" Longitude="_longitude" Latitude="_latitude" Zoom="14" Style="height: 50em; width: 100%;">
+    <Map>
+        <Basemap>
+                <PortalItem Id="4a6cb60ebbe3483a805999d481c2daa5" />
+        </Basemap>
+    <GraphicsLayer>
+        <Graphic>
+            <SimpleMarkerSymbol Size="10" />
+            <Point Latitude="_latitude" Longitude="_longitude" />
+        </Graphic>
+    </GraphicsLayer>
+    
+    </Map>
+    <ScaleBarWidget Position="OverlayPosition.BottomLeft" />
+
+</MapView>
+
+<a href="https://docs.geoblazor.com/pages/gettingStarted.html"> Dokumentation for GeoBlazor</a> <br />
+
+<a href="https://samples.geoblazor.com/basemap-layer-lists"> Se her for flere exempler og mere komplekse løsninger!</a>
+
+@code {
+    private readonly double _latitude = 56.46566959338588;
+    private readonly double _longitude = 9.411976562074097;
+} 
