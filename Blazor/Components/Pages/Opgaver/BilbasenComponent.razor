@@ -1,0 +1,32 @@
+﻿@inherits ComponentBase
+
+<div class="modal fade" id="carDetailsModal" tabindex="-1" aria-labelledby="carDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@Car.MakeModel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <img src="@Car.ImageUrls[0]" class="img-fluid" alt="@Car.MakeModel">
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Price:</strong> @Car.Price</p>
+                        <p><strong>Year:</strong> @Car.Year</p>
+                        <p><strong>Kilometers:</strong> @Car.Kilometers</p>
+                        <p><strong>Fuel:</strong> @Car.Fuel</p>
+                        <p><strong>Region:</strong> @Car.Region</p>
+                        <p><strong>Municipality:</strong> @Car.Municipality</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public BilbasenAPI.CarBB Car { get; set; }
+}

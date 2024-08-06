@@ -1,0 +1,244 @@
+﻿@page "/Opgaver/VisualisereBenzinpriser"
+
+<h3>Visualisere Benzin- og Dieselpriser</h3>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <div class="card border-info">
+            <div class="card-body">
+                <h5 class="card-title">Dataanalyse Benzin</h5>
+                <p>Seneste Benzinpris: @latestBenzinPrice kr.</p>
+                <p>Gennemsnit: @averageBenzinPrice kr.</p>
+                <p>Median: @medianBenzinPrice kr.</p>
+                <p>Varians: @varianceBenzinPrice kr.</p>
+                <p>52-ugers høj: @highBenzinPrice kr.</p>
+                <p>52-ugers lav: @lowBenzinPrice kr.</p>
+                <p>Inflation: @inflationBenzinPercentage % fra d. @startBenzinDate til d. @endBenzinDate</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card border-danger">
+            <div class="card-body">
+                <h5 class="card-title">Dataanalyse Diesel</h5>
+                <p>Seneste Dieselpris: @latestDieselPrice kr.</p>
+                <p>Gennemsnit: @averageDieselPrice kr.</p>
+                <p>Median: @medianDieselPrice kr.</p>
+                <p>Varians: @varianceDieselPrice kr.</p>
+                <p>52-ugers høj: @highDieselPrice kr.</p>
+                <p>52-ugers lav: @lowDieselPrice kr.</p>
+                <p>Inflation: @inflationDieselPercentage % fra d. @startDieselDate til d. @endDieselDate</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<LineChart @ref="lineChart" Width="1150" Class="mb-4" />
+
+@code {
+    private LineChart lineChart = default!;
+    private LineChartOptions lineChartOptions = default!;
+    private ChartData chartData = new ChartData { Datasets = new List<IChartDataset>() };
+    private HttpClient _httpClient;
+
+    private bool showBenzin = true;
+    private bool showDiesel = true;
+    private LineChartDataset benzinDataset;
+    private LineChartDataset dieselDataset;
+    private string latestBenzinPrice = "N/A";
+    private string latestDieselPrice = "N/A";
+    private double averageBenzinPrice;
+    private double medianBenzinPrice;
+    private double varianceBenzinPrice;
+    private double averageDieselPrice;
+    private double medianDieselPrice;
+    private double varianceDieselPrice;
+    private double highBenzinPrice;
+    private double lowBenzinPrice;
+    private double highDieselPrice;
+    private double lowDieselPrice;
+    private double inflationBenzinPercentage;
+    private double inflationDieselPercentage;
+    private string startBenzinDate = "N/A";
+    private string endBenzinDate = "N/A";
+    private string startDieselDate = "N/A";
+    private string endDieselDate = "N/A";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _httpClient = new HttpClient();
+        lineChartOptions = new LineChartOptions
+            {
+                Responsive = true,
+                Interaction = new Interaction { Mode = InteractionMode.Index }
+            };
+
+        await FetchAndVisualizeDataAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await lineChart.InitializeAsync(chartData, lineChartOptions);
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task FetchAndVisualizeDataAsync()
+    {
+        var benzinTask = FetchBenzinDataAsync();
+        var dieselTask = FetchDieselDataAsync();
+
+        await Task.WhenAll(benzinTask, dieselTask);
+
+        UpdateChartData();
+        PerformDataAnalysis();
+    }
+
+    private async Task FetchBenzinDataAsync()
+    {
+        var response = await _httpClient.GetAsync("https://magsapi.onrender.com/api/miles95");
+        if (response.IsSuccessStatusCode)
+        {
+            var jsonData = await response.Content.ReadFromJsonAsync<List<BenzinPrisData>>();
+            benzinDataset = CreateDataset(jsonData, "Benzin Priser", "rgba(75, 192, 192, 0.2)", "rgba(75, 192, 192, 1)");
+            latestBenzinPrice = Math.Round(double.Parse(jsonData.Last().Price.Replace(".", ",")), 2).ToString("F2");
+        }
+    }
+
+    private async Task FetchDieselDataAsync()
+    {
+        var response = await _httpClient.GetAsync("https://magsapi.onrender.com/api/diesel");
+        if (response.IsSuccessStatusCode)
+        {
+            var jsonData = await response.Content.ReadFromJsonAsync<List<BenzinPrisData>>();
+            dieselDataset = CreateDataset(jsonData, "Diesel Priser", "rgba(255, 99, 132, 0.2)", "rgba(255, 99, 132, 1)");
+            latestDieselPrice = Math.Round(double.Parse(jsonData.Last().Price.Replace(".", ",")), 2).ToString("F2");
+        }
+    }
+
+    private LineChartDataset CreateDataset(List<BenzinPrisData> data, string label, string backgroundColor, string borderColor)
+    {
+        var prices = data.Select(d => Math.Round(double.Parse(d.Price.Replace(".", ",")), 2)).ToList();
+        var labels = data.Select(d => d.Date).ToList();
+
+        chartData.Labels = labels;
+
+        return new LineChartDataset
+            {
+                Label = label,
+                Data = prices,
+                BackgroundColor = new List<string> { backgroundColor },
+                BorderColor = new List<string> { borderColor },
+                BorderWidth = new List<double> { 2 }
+            };
+    }
+
+    private void UpdateChartData()
+    {
+        chartData.Datasets.Clear();
+
+        if (showBenzin && benzinDataset != null)
+        {
+            chartData.Datasets.Add(benzinDataset);
+        }
+
+        if (showDiesel && dieselDataset != null)
+        {
+            chartData.Datasets.Add(dieselDataset);
+        }
+
+        InvokeAsync(() => lineChart.UpdateAsync(chartData, lineChartOptions));
+    }
+
+    private void PerformDataAnalysis()
+    {
+        if (benzinDataset != null)
+        {
+            var benzinPrices = benzinDataset.Data.Cast<double>().ToList();
+            var benzinDates = chartData.Labels; // assuming chartData.Labels contains the dates
+
+            averageBenzinPrice = Math.Round(benzinPrices.Average(), 2);
+            medianBenzinPrice = Math.Round(CalculateMedian(benzinPrices), 2);
+            varianceBenzinPrice = Math.Round(CalculateVariance(benzinPrices, averageBenzinPrice), 2);
+            highBenzinPrice = Math.Round(benzinPrices.Max(), 2);
+            lowBenzinPrice = Math.Round(benzinPrices.Min(), 2);
+            (inflationBenzinPercentage, startBenzinDate, endBenzinDate) = CalculateInflation(benzinPrices, benzinDates);
+        }
+
+        if (dieselDataset != null)
+        {
+            var dieselPrices = dieselDataset.Data.Cast<double>().ToList();
+            var dieselDates = chartData.Labels; // assuming chartData.Labels contains the dates
+
+            averageDieselPrice = Math.Round(dieselPrices.Average(), 2);
+            medianDieselPrice = Math.Round(CalculateMedian(dieselPrices), 2);
+            varianceDieselPrice = Math.Round(CalculateVariance(dieselPrices, averageDieselPrice), 2);
+            highDieselPrice = Math.Round(dieselPrices.Max(), 2);
+            lowDieselPrice = Math.Round(dieselPrices.Min(), 2);
+            (inflationDieselPercentage, startDieselDate, endDieselDate) = CalculateInflation(dieselPrices, dieselDates);
+        }
+    }
+
+    private double CalculateMedian(List<double> prices)
+    {
+        prices.Sort();
+        int count = prices.Count;
+        if (count % 2 == 0)
+        {
+            return (prices[count / 2 - 1] + prices[count / 2]) / 2;
+        }
+        else
+        {
+            return prices[count / 2];
+        }
+    }
+
+    private double CalculateVariance(List<double> prices, double average)
+    {
+        return prices.Select(price => Math.Pow(price - average, 2)).Average();
+    }
+
+    private (double inflationPercentage, string startDate, string endDate) CalculateInflation(List<double> prices, List<string> dates)
+    {
+        if (prices.Count < 2 || dates.Count < 2) return (0, "N/A", "N/A");
+
+        List<DateTime> parsedDates = dates.Select(date => DateTime.Parse(date)).ToList();
+
+        DateTime endDate = parsedDates.Max();
+        DateTime startDate = endDate.AddYears(-1);
+
+        double? startPrice = null;
+        double? endPrice = null;
+
+        DateTime closestStartDate = parsedDates.FirstOrDefault(date => date >= startDate) != default
+            ? parsedDates.First(date => date >= startDate)
+            : parsedDates.LastOrDefault(date => date <= startDate);
+
+        DateTime closestEndDate = parsedDates.FirstOrDefault(date => date >= endDate) != default
+            ? parsedDates.First(date => date >= endDate)
+            : parsedDates.LastOrDefault(date => date <= endDate);
+
+        int startIndex = parsedDates.IndexOf(closestStartDate);
+        int endIndex = parsedDates.IndexOf(closestEndDate);
+
+        if (startIndex >= 0 && startIndex < prices.Count) startPrice = prices[startIndex];
+        if (endIndex >= 0 && endIndex < prices.Count) endPrice = prices[endIndex];
+
+        if (startPrice.HasValue && endPrice.HasValue)
+        {
+            double inflation = Math.Round(((endPrice.Value - startPrice.Value) / startPrice.Value) * 100, 2);
+            return (inflation, closestStartDate.ToString("dd-MM-yyyy"), closestEndDate.ToString("dd-MM-yyyy"));
+        }
+
+        return (0, "N/A", "N/A");
+    }
+
+
+    private class BenzinPrisData
+    {
+        public string Price { get; set; }
+        public string Date { get; set; }
+    }
+}

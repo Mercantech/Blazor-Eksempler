@@ -1,0 +1,293 @@
+﻿@page "/Opgaver/Bilbasen"
+@using System.Text.Json
+@inject HttpClient Http
+
+<PageTitle>BilBasen</PageTitle>
+
+<div class="container mt-5">
+    <h1>BilBasen Listings</h1>
+    <div class="row">
+        @if (cars == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            @foreach (var car in cars)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <img src="@car.ImageUrls.FirstOrDefault()" class="card-img-top" alt="@car.MakeModel">
+                        <div class="card-body">
+                            <h5 class="card-title">@car.MakeModel</h5>
+                            <p class="card-text">
+                                <strong>Price:</strong> @car.Price<br />
+                                <strong>Year:</strong> @car.Year<br />
+                                <strong>Kilometers:</strong> @car.Kilometers
+                            </p>
+                            <button class="btn btn-primary" @onclick="() => ShowCarDetails(car)">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@if (selectedCar != null)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@selectedCar.MakeModel</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="carousel-container" @onwheel="OnScroll">
+                        <button class="carousel-button prev" @onclick="PreviousImage">Previous</button>
+                        <button class="carousel-button next" @onclick="NextImage">Next</button>
+
+                        <div class="carousel">
+                            @for (var i = 0; i < selectedCar.ImageUrls.Count; i++)
+                            {
+                                <div class="carousel-item @(currentIndex == i ? "active" : "")">
+                                    <img src="@selectedCar.ImageUrls[i]" alt="Image @i" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="details">
+                        <br/>
+                        <p><strong>Price:</strong> @selectedCar.Price</p>
+                        <p><strong>Year:</strong> @selectedCar.Year</p>
+                        <p><strong>Kilometers:</strong> @selectedCar.Kilometers</p>
+                        <p><strong>Fuel:</strong> @selectedCar.Fuel</p>
+                        <p><strong>Region:</strong> @selectedCar.Region</p>
+                        <p><strong>Municipality:</strong> @selectedCar.Municipality</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    private List<CarBB> cars;
+    private CarBB selectedCar;
+    private int currentIndex = 0;
+    private bool isScrollEnabled = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var jsonData = await Http.GetFromJsonAsync<List<JsonElement>>("https://magsapi.onrender.com/api/bilbasen");
+        cars = jsonData.Select(ParseCar).ToList();
+    }
+
+    private CarBB ParseCar(JsonElement carJson)
+    {
+        var kvItems = carJson.GetProperty("adTypeProperties").GetProperty("adnuntiusDisplay").GetProperty("kv").EnumerateArray();
+        var car = new CarBB();
+
+        foreach (var item in kvItems)
+        {
+            if (item.TryGetProperty("attr_makemodel", out var makeModel))
+                car.MakeModel = makeModel[0].GetString();
+            if (item.TryGetProperty("listing_price_raw", out var price))
+                car.Price = price[0].GetString();
+            if (item.TryGetProperty("g_cy", out var year))
+                car.Year = year[0].GetString();
+            if (item.TryGetProperty("attr_numberofkm", out var kilometers))
+                car.Kilometers = kilometers[0].GetString();
+            if (item.TryGetProperty("attr_fuel", out var fuel))
+                car.Fuel = fuel[0].GetString();
+            if (item.TryGetProperty("listing_contact_region", out var region))
+                car.Region = region[0].GetString();
+            if (item.TryGetProperty("listing_contact_municipality", out var municipality))
+                car.Municipality = municipality[0].GetString();
+            if (item.TryGetProperty("attr_imageurls", out var imageUrls))
+                car.ImageUrls = imageUrls.EnumerateArray().Select(img => img.GetString()).ToList();
+        }
+
+        car.ImageUrl = car.ImageUrls.FirstOrDefault(); // Fallback til ImageUrl, hvis kun ét billede skal bruges
+
+        return car;
+    }
+
+    private void ShowCarDetails(CarBB car)
+    {
+        selectedCar = car;
+        currentIndex = 0; // Reset index når en ny bil vælges
+    }
+
+    private void CloseModal()
+    {
+        selectedCar = null;
+    }
+
+    private void NextImage()
+    {
+        if (selectedCar != null && selectedCar.ImageUrls != null)
+        {
+            currentIndex = (currentIndex + 1) % selectedCar.ImageUrls.Count;
+        }
+    }
+
+    private void PreviousImage()
+    {
+        if (selectedCar != null && selectedCar.ImageUrls != null)
+        {
+            currentIndex = (currentIndex - 1 + selectedCar.ImageUrls.Count) % selectedCar.ImageUrls.Count;
+        }
+    }
+
+    private void OnScroll(WheelEventArgs e)
+    {
+        if (isScrollEnabled)
+        {
+            if (e.DeltaY > 0)
+            {
+                NextImage();
+            }
+            else
+            {
+                PreviousImage();
+            }
+        }
+    }
+
+    private void ToggleScroll()
+    {
+        isScrollEnabled = !isScrollEnabled;
+    }
+
+    public class CarBB
+    {
+        public string MakeModel { get; set; }
+        public string Price { get; set; }
+        public string Year { get; set; }
+        public string Kilometers { get; set; }
+        public string ImageUrl { get; set; }
+        public string Fuel { get; set; }
+        public string Region { get; set; }
+        public string Municipality { get; set; }
+        public List<string> ImageUrls { get; set; }
+    }
+}
+
+<style>
+    .card-img-top {
+          width: 100%;
+          height: 200px; 
+          object-fit: cover; 
+      }
+
+    .card {
+        height: 100%; 
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .modal-dialog {
+        max-width: 800px; 
+    }
+
+    .modal-content {
+        border-radius: 10px; 
+    }
+
+    .modal-header, .modal-footer {
+        border: none; 
+    }
+
+    .modal-header .modal-title {
+        font-size: 1.5rem; 
+    }
+
+    .modal-header .close {
+        font-size: 1.5rem;
+    }
+
+    .modal-body img {
+        width: 100%;
+        height: auto; 
+        max-height: 450px; 
+        object-fit: cover; 
+        border-radius: 5px; 
+    }
+
+
+
+    .modal-body .col-md-6 {
+        display: flex;
+        flex-direction: column;
+        justify-content: center; 
+    }
+    .carousel-container {
+        position: relative;
+        max-width: 100%;
+        margin: auto;
+    }
+
+    .carousel {
+        display: flex;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .carousel-item {
+        flex: 0 0 100%;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        transition: opacity 0.5s ease-in-out;
+    }
+
+    .carousel-item.active {
+        display: flex;
+        opacity: 1;
+    }
+
+    .carousel-item img {
+        width: 100%;
+        max-height: 450px;
+        object-fit: cover;
+        border-radius: 5px;
+    }
+
+    .carousel-button {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        z-index: 1;
+        opacity: 0.8;
+    }
+
+    .carousel-button.prev {
+        left: 10px;
+    }
+
+    .carousel-button.next {
+        right: 10px;
+    }
+
+    .carousel-button:hover {
+        background-color: rgba(0, 0, 0, 0.7);
+        opacity: 1;
+    }
+
+</style>
