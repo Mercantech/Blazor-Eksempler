@@ -1,0 +1,111 @@
+﻿@page "/Opgaver/BinærKodeomformer"
+
+<PageTitle> Binær Kodeomformer </PageTitle>
+
+<h1>IP Address Converter | Binær Kodeomformer | Opgaven findes på  <a href="https://mercantec.notion.site/Bin-r-Kodeomformer-45731045d4094c7fb0df703800c6b962?pvs=4"> Notion</a> </h1>
+
+<h3> IP => Binær </h3>
+<p>Enter an IP address:</p>
+<input type="number" @bind="@Octet1" max="256" min="0" />
+<input type="number" @bind="@Octet2" max="256" min="0" />
+<input type="number" @bind="@Octet3" max="256" min="0" />
+<input type="number" @bind="@Octet4" max="256" min="0" />
+<br />
+<br />
+<p>Binary representation: @BinaryIpAddress</p>
+<br />
+<br />
+<h3> Binær => IP </h3>
+<input type="string" size="32" @oninput="ValidateBinaryInput" @bind="@BinaryToIpAddress" />
+
+<p> Ip Address: @IpAddressFromBinary </p>
+
+
+@code {
+    public int Octet1 = 127;
+    public int Octet2 = 0;
+    public int Octet3 = 0;
+    public int Octet4 = 1;
+
+    public List<int> IpAddress => new List<int> { Octet1, Octet2, Octet3, Octet4 };
+
+    List<int> converterList = new List<int> { 128, 64, 32, 16, 8, 4, 2, 1 };
+
+    public string BinaryIpAddress => ConvertIpAddressToBinary(IpAddress);
+
+    public string BinaryToIpAddress = "11111111.00000000.00000000.00000001";
+
+    public string IpAddressFromBinary => ConvertBinaryToIpAddress(BinaryToIpAddress);
+
+    private string ConvertIpAddressToBinary(List<int> ipAddress)
+    {
+        string BinaryReturn = "";
+
+        foreach (int octet in ipAddress)
+        {
+            BinaryReturn += OctetToBinary(octet);
+            BinaryReturn += ".";
+        }
+        BinaryReturn = BinaryReturn.Remove(BinaryReturn.Length - 1, 1);
+        return BinaryReturn;
+
+    }
+    private string OctetToBinary(int octet)
+    {
+        string binary = "";
+        foreach (int number in converterList)
+        {
+            if (octet >= number)
+            {
+                octet -= number;
+                binary += "1";
+            }
+            else { binary += "0"; }
+        }
+        return binary;
+    }
+
+    private string ConvertBinaryToIpAddress(string binary)
+    {
+        char[] allowedChars = { '0', '1', '.' };
+
+        int count = binary.Count(c => !allowedChars.Contains(c));
+
+        if (binary.Length != originalLength || count > 0)
+        {
+            return "Dit input matcher ikke en binærkodestreng!";
+        }
+        var binaryOctets = binary.Split('.');
+        var ipOctets = new int[binaryOctets.Length];
+
+        for (int i = 0; i < binaryOctets.Length; i++)
+        {
+            ipOctets[i] = BinaryToOctet(binaryOctets[i]);
+        }
+
+        return string.Join(".", ipOctets);
+    }
+    private int BinaryToOctet(string octet)
+    {
+        int ipOctet = 0;
+
+        for (int i = 0; i < octet.Length; i++)
+        {
+            int bit = octet[i] - '0'; // Convert the character to an integer
+            ipOctet += bit * converterList[i];
+        }
+
+        return ipOctet;
+    }
+
+    private int originalLength = "11111111.00000000.00000000.00000001".Length;
+
+    private void ValidateBinaryInput(ChangeEventArgs e)
+    {
+        var input = e.Value.ToString();
+        if (System.Text.RegularExpressions.Regex.IsMatch(input, "^[01]+$") && input.Length <= originalLength)
+        {
+            BinaryToIpAddress = input;
+        }
+    }
+}

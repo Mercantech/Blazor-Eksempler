@@ -1,0 +1,122 @@
+﻿@page "/Opgaver/CookieClicker"
+
+<PageTitle>Country Borders Game</PageTitle>
+
+<h1>Cookie Clicker | Opgaven findes på  <a href="https://mercantec.notion.site/Cookie-Clicker-bc1b8e1add7e4eabbe9913dc4cb62553"> Notion</a></h1>
+<br />
+
+<div class="grid-container">
+    <div class="column">
+        <div class="row">
+            <p class="cookie-count">Number of cookies: @numberOfCookies 🍪</p>
+            <img src="/css/open-iconic/latest.png" alt="Click me!" @onclick="IncrementCookieCount" class="cookie-image" />
+        </div>
+    </div>
+    <div class="column">
+        <div class="row">
+            <li>@upgrades[0].Name - Purchased: @upgrades[0].PurchasedCount, Cookies Per Click: @cookiesPerClick</li>
+            <button @onclick="() => PurchaseUpgrade(upgrades[0])" disabled="@(!CanPurchaseUpgrade(upgrades[0]))">
+                Purchase @upgrades[0].Name for @upgrades[0].Cost cookies
+            </button>
+            <li>@upgrades[1].Name - Purchased: @upgrades[1].PurchasedCount, Cookies Per Second: @truecookiesPerSecond</li>
+            <button @onclick="() => PurchaseUpgrade(upgrades[1])" disabled="@(!CanPurchaseUpgrade(upgrades[1]))">
+                Purchase @upgrades[1].Name for @upgrades[1].Cost cookies
+            </button>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .column {
+        flex: 1;
+    }
+
+    .cookie-image {
+        width: 350px; 
+        height: auto;
+    }
+
+    .cookie-count {
+        font-size: 20px; 
+        font-weight: bold;
+    }
+</style>
+
+
+
+
+@code {
+    private int numberOfCookies = 0;
+    private int cookiesPerClick = 1;
+    private int cookiesPerSecond = 0;
+    private int truecookiesPerSecond => cookiesPerClick * cookiesPerSecond;
+    private List<Upgrade> upgrades = new List<Upgrade>
+    {
+        new Upgrade { Name = "Cursor", Cost = 15, CookiesPerClick = 1 },
+        new Upgrade { Name = "Grandma", Cost = 100, CookiesPerSecond = 1 }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await IncrementCookiesPerSecondAsync();
+    }
+
+    private async Task IncrementCookiesPerSecondAsync()
+    {
+        while (true)
+        {
+            if (upgrades[1].PurchasedCount >= 1)
+            {
+                cookiesPerSecond = 1;
+            }
+            await Task.Delay(1000);
+
+            numberOfCookies += truecookiesPerSecond;
+            StateHasChanged(); // Update the UI
+        }
+    }
+
+    private void IncrementCookieCount()
+    {
+        numberOfCookies += cookiesPerClick;
+    }
+
+    private void PurchaseUpgrade(Upgrade upgrade)
+    {
+        if (CanPurchaseUpgrade(upgrade))
+        {
+            numberOfCookies -= upgrade.Cost;
+            upgrade.PurchasedCount++;
+            cookiesPerClick += upgrade.CookiesPerClick;
+            cookiesPerSecond += upgrade.CookiesPerSecond;
+            upgrade.Cost += upgrade.Cost;
+        }
+    }
+
+    private bool CanPurchaseUpgrade(Upgrade upgrade)
+    {
+        return numberOfCookies >= upgrade.Cost;
+    }
+
+    public class Upgrade
+    {
+        public string Name { get; set; }
+        public int Cost { get; set; }
+        public int CookiesPerClick { get; set; }
+        public int CookiesPerSecond { get; set; }
+        public int PurchasedCount { get; set; }
+    }
+}
