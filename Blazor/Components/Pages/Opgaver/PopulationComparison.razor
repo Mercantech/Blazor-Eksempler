@@ -1,0 +1,236 @@
+﻿@page "/Opgaver/population"
+@inject HttpClient Http
+
+<PageTitle>Population Comparison Game</PageTitle>
+
+<h3 class="game-title">Population Comparison Game</h3>
+
+@if (loading)
+{
+    <p>Loading...</p>
+}
+else if (gameOver)
+{
+    <div class="game-container">
+        <h4>Game Over</h4>
+        <p>Your Score: @score</p>
+        <p>@lastComparison</p>
+        <button @onclick="RestartGame" class="submit-button">Play Again</button>
+    </div>
+}
+else
+{
+    <div class="game-container">
+        <div class="comparison-container">
+            <div class="country-box">
+                <img class="country-flag" src="@firstCountry.flags.png" alt="@firstCountry.name.common Flag" />
+                <p>@firstCountry.name.common</p>
+                <p>has</p>
+                <p>@firstCountry.population.ToString("N0")</p>
+                <p>people</p>
+            </div>
+            <div class="vs-box">
+                <p>VS</p>
+            </div>
+            <div class="country-box">
+                <img class="country-flag" src="@secondCountry.flags.png" alt="@secondCountry.name.common Flag" />
+                <p>@secondCountry.name.common</p>
+                <p>has</p>
+                <p>
+                    <button @onclick="() => CheckAnswer(firstCountry, secondCountry)" class="comparison-button">Less</button>
+                    <button @onclick="() => CheckAnswer(secondCountry, firstCountry)" class="comparison-button">More</button>
+                </p>
+                <p>people</p>
+            </div>
+        </div>
+        <div class="score-container">
+            <h4>Score</h4>
+            <p>Current Score: @score</p>
+            <p>High Score: @highScore</p>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Country> countries = new List<Country>();
+    private Country firstCountry;
+    private Country secondCountry;
+    private int score;
+    private int highScore;
+    private bool loading = true;
+    private bool gameOver = false;
+    private string lastComparison;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Http.GetFromJsonAsync<List<Country>>("https://restcountries.com/v3.1/all?fields=name,population,flags");
+        countries = response.Where(c => c.population > 0).ToList();
+        StartNewRound(null);
+        loading = false;
+    }
+
+    private void StartNewRound(Country? winner)
+    {
+        var random = new Random();
+
+        if (winner is null)
+        {
+            firstCountry = countries[random.Next(countries.Count)];
+        }
+        else
+        {
+            firstCountry = winner;
+        }
+
+        secondCountry = countries[random.Next(countries.Count)];
+
+        while (firstCountry.name == secondCountry.name) 
+        {             
+            secondCountry = countries[random.Next(countries.Count)];
+        }
+    }
+
+    private void CheckAnswer(Country selected, Country other)
+    {
+        if (selected.population >= other.population)
+        {
+            score++;
+            if (score > highScore)
+            {
+                highScore = score;
+            }
+            StartNewRound(other);
+        }
+        else
+        {
+            lastComparison = $"{selected.name.common} has {selected.population:N0} people, while {other.name.common} has {other.population:N0} people.";
+            gameOver = true;
+        }
+    }
+
+    private void RestartGame()
+    {
+        score = 0;
+        gameOver = false;
+        StartNewRound(null);
+    }
+
+    public class Country
+    {
+        public Name name { get; set; }
+        public long population { get; set; }
+        public Flags flags { get; set; }
+    }
+
+    public class Name
+    {
+        public string common { get; set; }
+        public string official { get; set; }
+    }
+
+    public class Flags
+    {
+        public string png { get; set; }
+        public string svg { get; set; }
+        public string alt { get; set; }
+    }
+}
+
+<style>
+    body {
+        background-color: #f0f2f5;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .game-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #ffffff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .game-title {
+        font-size: 2.5em;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .comparison-container {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .country-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .vs-box {
+        font-size: 2em;
+        color: #666;
+        font-weight: bold;
+    }
+
+    .country-flag {
+        width: 150px;
+        height: auto;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .comparison-button {
+        padding: 10px 20px;
+        font-size: 1em;
+        margin: 5px;
+        cursor: pointer;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+        .comparison-button:hover {
+            background-color: #0056b3;
+        }
+
+    .score-container {
+        text-align: center;
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .submit-button {
+        padding: 10px 20px;
+        font-size: 1em;
+        cursor: pointer;
+        background-color: #28a745;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+        .submit-button:hover {
+            background-color: #218838;
+        }
+</style>

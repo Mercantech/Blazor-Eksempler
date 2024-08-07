@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Components\Pages\FlagQuiz.razor" />
     <Content Remove="Components\Pages\Opgaver\Opgaver.razor" />
   </ItemGroup>
 
@@ -31,12 +32,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <_ContentIncludedByDefault Remove="Components\Pages\FlagQuiz.razor" />
     <_ContentIncludedByDefault Remove="Components\Pages\Opgaver\Opgaver.razor" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Components\Pages\Opgaver\OpgaverFlag.razor" />
+    <None Include="Components\Pages\Opgaver\FlagQuiz.razor" />
+    <None Include="Components\Pages\Opgaver\Border.razor" />
     <None Include="Components\Pages\Opgaver\OpgaveOversigt.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Components\Pages\FlagQuiz.razor" />
   </ItemGroup>
 
 </Project>
