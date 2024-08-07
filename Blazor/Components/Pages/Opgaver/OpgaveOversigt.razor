@@ -1,15 +1,36 @@
-﻿@page "/opgaver"
+﻿@page "/Opgaver"
 
 <h3>Opgaver</h3>
 
 <p>Her er en liste over opgaver, som mulig løsning eller vejledning på opgaver inde på Notion.</p>
 
-<nav>
-    <ul>
-        <li><NavLink href="/Opgaver/Bilbasen" Match="NavLinkMatch.All">Bilbasen</NavLink></li>
-        <li><NavLink href="/Opgaver/VisualisereBenzinpriser" Match="NavLinkMatch.All">Visualisere Benzinpriser</NavLink></li>
-    </ul>
-</nav>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <NavLink href="/Opgaver/Bilbasen" class="card-link">
+                <div class="card d-flex flex-row align-items-center">
+                    <img src="https://blazoreksempler.magsapi.com/BilbasenIcon.png" class="card-img-left" alt="Bilbasen Icon" style="width: 100px; height: 100px; margin-right: 15px;">
+                    <div class="card-body">
+                        <h5 class="card-title">Bilbasen</h5>
+                        <p class="card-text">Opgaven handler om at lave en applikation, der visualiserer data fra Bilbasen.</p>
+                    </div>
+                </div>
+            </NavLink>
+        </div>
+        <div class="col-md-6 mb-4">
+            <NavLink href="/Opgaver/VisualisereBenzinpriser" class="card-link">
+                <div class="card d-flex flex-row align-items-center">
+                    <img src="https://blazoreksempler.magsapi.com/CirkleKIcon.png" class="card-img-left" alt="Benzinpriser Icon" style="width: 100px; height: 100px; margin-right: 15px;">
+                    <div class="card-body">
+                        <h5 class="card-title">Visualisere Benzinpriser</h5>
+                        <p class="card-text">Opgaven handler om at lave en applikation, der visualiserer benzinpriser fra forskellige leverandører.</p>
+                    </div>
+                </div>
+            </NavLink>
+        </div>
+    </div>
+</div>
+
 
 @code {
 }
