@@ -1,0 +1,212 @@
+﻿@page "/opgaver/flag"
+@inject HttpClient Http
+
+<PageTitle>Country Borders Game</PageTitle>
+
+<h3 class="game-title">Country Borders Game</h3>
+
+@if (loading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="game-container">
+        <h4>Country: @selectedCountry.name.common</h4>
+        <img class="country-flag" src="@selectedCountry.flags.png" alt="Flag of @selectedCountry.name.common" />
+
+        <div class="guess-section">
+            <label for="guessInput">Guess the neighboring countries:</label>
+            <select id="guessInput" @bind="currentGuess" class="guess-dropdown">
+                <option value="">Select a country</option>
+                @foreach (var country in countries)
+                {
+                    <option value="@country.cca3">@country.name.common</option>
+                }
+            </select>
+            <button @onclick="CheckGuess" class="submit-button">Submit</button>
+        </div>
+
+        <div class="flags-container">
+            @foreach (var border in selectedCountry.borders)
+            {
+                <div class="flag-box">
+                    @if (guesses.Contains(border.ToUpper()))
+                    {
+                        <img src="@GetFlagUrl(border)" alt="@border" />
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="guesses-section">
+            <h5>Guesses:</h5>
+            <ul>
+                @foreach (var guess in guesses)
+                {
+                    <li>@guess - @(IsCorrectGuess(guess) ? "Correct" : "Incorrect")</li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Country> countries = new List<Country>();
+    private Country selectedCountry;
+    private bool loading = true;
+    private string currentGuess = string.Empty;
+    private List<string> guesses = new List<string>();
+    private Dictionary<string, string> countryFlags = new Dictionary<string, string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Http.GetFromJsonAsync<List<Country>>("https://restcountries.com/v3.1/all?fields=flags,name,borders,cca3,cioc");
+        countries = response.Where(c => c.borders != null && c.borders.Any()).OrderBy(c => c.name.common).ToList();
+        foreach (var country in response)
+        {
+            countryFlags[country.cca3.ToUpper()] = country.flags.png;
+        }
+        SelectRandomCountry();
+        loading = false;
+    }
+
+    private void SelectRandomCountry()
+    {
+        var random = new Random();
+        selectedCountry = countries[random.Next(countries.Count)];
+    }
+
+    private void CheckGuess()
+    {
+        if (!string.IsNullOrWhiteSpace(currentGuess))
+        {
+            var guessedCountry = currentGuess.Trim().ToUpper();
+            if (!guesses.Contains(guessedCountry))
+            {
+                guesses.Add(guessedCountry);
+                countries = countries.Where(c => !c.cca3.Equals(guessedCountry, StringComparison.OrdinalIgnoreCase)).OrderBy(c => c.name.common).ToList();
+                currentGuess = string.Empty;
+            }
+        }
+    }
+
+    private bool IsCorrectGuess(string guess)
+    {
+        return selectedCountry.borders.Any(b => b.Equals(guess, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string GetFlagUrl(string borderCode)
+    {
+        return countryFlags.ContainsKey(borderCode.ToUpper()) ? countryFlags[borderCode.ToUpper()] : "";
+    }
+
+    public class Country
+    {
+        public Flags flags { get; set; }
+        public Name name { get; set; }
+        public List<string> borders { get; set; }
+        public string cca3 { get; set; }
+    }
+
+    public class Flags
+    {
+        public string png { get; set; }
+        public string svg { get; set; }
+        public string alt { get; set; }
+    }
+
+    public class Name
+    {
+        public string common { get; set; }
+        public string official { get; set; }
+        public Dictionary<string, NativeName> nativeName { get; set; }
+    }
+
+    public class NativeName
+    {
+        public string official { get; set; }
+        public string common { get; set; }
+    }
+}
+
+<style>
+    .game-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+    }
+
+    .game-title {
+        font-size: 2em;
+        margin-bottom: 20px;
+    }
+
+    .country-flag {
+        width: 200px;
+        height: auto;
+        margin-bottom: 20px;
+    }
+
+    .guess-section {
+        margin-bottom: 20px;
+    }
+
+    .guess-dropdown {
+        width: 100%;
+        padding: 10px;
+        font-size: 1em;
+        margin-bottom: 10px;
+    }
+
+    .submit-button {
+        padding: 10px 20px;
+        font-size: 1em;
+        cursor: pointer;
+    }
+
+    .flags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    .flag-box {
+        width: 100px;
+        height: 70px;
+        border: 1px solid #ccc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f9f9f9;
+    }
+
+        .flag-box img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+    .guesses-section {
+        text-align: left;
+        width: 100%;
+    }
+
+        .guesses-section ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .guesses-section li {
+            padding: 5px 0;
+        }
+</style>
