@@ -98,7 +98,7 @@
 
     private async Task FetchBenzinDataAsync()
     {
-        var response = await _httpClient.GetAsync("https://magsapi.onrender.com/api/miles95");
+        var response = await _httpClient.GetAsync("https://opgaver.magsapi.com/Opgaver/miles95");
         if (response.IsSuccessStatusCode)
         {
             var jsonData = await response.Content.ReadFromJsonAsync<List<BenzinPrisData>>();
@@ -109,7 +109,7 @@
 
     private async Task FetchDieselDataAsync()
     {
-        var response = await _httpClient.GetAsync("https://magsapi.onrender.com/api/diesel");
+        var response = await _httpClient.GetAsync("https://opgaver.magsapi.com/Opgaver/diesel");
         if (response.IsSuccessStatusCode)
         {
             var jsonData = await response.Content.ReadFromJsonAsync<List<BenzinPrisData>>();
@@ -157,7 +157,7 @@
         if (benzinDataset != null)
         {
             var benzinPrices = benzinDataset.Data.Cast<double>().ToList();
-            var benzinDates = chartData.Labels; // assuming chartData.Labels contains the dates
+            var benzinDates = chartData.Labels; 
 
             averageBenzinPrice = Math.Round(benzinPrices.Average(), 2);
             medianBenzinPrice = Math.Round(CalculateMedian(benzinPrices), 2);
@@ -170,7 +170,7 @@
         if (dieselDataset != null)
         {
             var dieselPrices = dieselDataset.Data.Cast<double>().ToList();
-            var dieselDates = chartData.Labels; // assuming chartData.Labels contains the dates
+            var dieselDates = chartData.Labels; 
 
             averageDieselPrice = Math.Round(dieselPrices.Average(), 2);
             medianDieselPrice = Math.Round(CalculateMedian(dieselPrices), 2);
