@@ -1,55 +1,74 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿<style>
+    .nav-icon {
+        font-size: 1.2rem; 
+        margin-right: 0.5rem; 
+        vertical-align: middle; 
+        display: inline-block; 
+    }
+
+    .nav-text {
+        display: inline-block; 
+        vertical-align: middle; 
+        line-height: normal; 
+    }
+
+</style>
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Blazor</a>
     </div>
 </div>
-
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="Carousel">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Carousel
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="charts">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Charts
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="ThreeJS">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> ThreeJS
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="Modal">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Modal
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="map">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Maps
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="Sensor">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Sensor
+                <span class="bi bi-house-door-fill nav-icon" aria-hidden="true"></span>
+                <span class="nav-text">Home</span>
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="Opgaver">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Opgaver
+                <span class="bi bi-list-check nav-icon" aria-hidden="true"></span>
+                <span class="nav-text">Opgaver</span>
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="charts">
+                <span class="bi bi-bar-chart-fill nav-icon" aria-hidden="true"></span>
+                <span class="nav-text">Charts</span>
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Sensor">
+                <span class="bi bi-broadcast nav-icon" aria-hidden="true"></span>
+                <span class="nav-text">Sensor</span>
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="ThreeJS">
+                <span class="bi bi-box nav-icon" aria-hidden="true"></span>
+                <span class="nav-text">ThreeJS</span>
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Modal">
+                <span class="bi bi-window nav-icon" aria-hidden="true"></span>
+                <span class="nav-text">Modal</span>
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="map">
+                <span class="bi bi-geo-alt-fill nav-icon" aria-hidden="true"></span>
+                <span class="nav-text">Maps</span>
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Carousel">
+                <span class="bi bi-images nav-icon" aria-hidden="true"></span>
+                <span class="nav-text">Carousel</span>
             </NavLink>
         </div>
     </nav>
 </div>
-

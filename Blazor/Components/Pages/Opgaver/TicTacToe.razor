@@ -1,0 +1,396 @@
+﻿@page "/Opgaver/tic-tac-toe"
+
+<h1>Tic Tac Toe</h1>
+
+<div class="game-container">
+    <div class="game-board @(gameOver ? "game-over" : "")">
+        @for (int i = 0; i < 3; i++)
+        {
+            <div class="row">
+                @for (int j = 0; j < 3; j++)
+                {
+                    int index = i * 3 + j;
+                    <button class="cell @GetCellClass(index)" @onclick="() => MakeMove(index)">
+                        @if (board[index] != '\0')
+                        {
+                            <span class="symbol">@board[index]</span>
+                        }
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="game-info">
+        <p class="status-message @(gameOver ? "winner" : "")">@statusMessage</p>
+        <button class="reset-button" @onclick="ResetGame">Nyt Spil</button>
+        <p>Spiller X: @playerXScore point</p>
+        <p>Spiller O (AI): @playerOScore point</p>
+    </div>
+
+    <div class="highscore">
+        <h2>Highscore</h2>
+        <ul>
+            @foreach (var score in highscores.OrderByDescending(s => s.Score).Take(5))
+            {
+                <li>@score.Name: @score.Score</li>
+            }
+        </ul>
+    </div>
+</div>
+
+@code {
+    private char[] board = new char[9];
+    private bool isXTurn = true;
+    private string statusMessage = "Spiller X's tur";
+    private bool gameOver = false;
+    private int[] winningCombo = new int[3];
+    private int playerXScore = 0;
+    private int playerOScore = 0;
+    private List<HighscoreEntry> highscores = new List<HighscoreEntry>();
+    private Random random = new Random();
+
+    protected override void OnInitialized()
+    {
+        ResetGame();
+        LoadHighscores();
+    }
+
+    private void MakeMove(int index)
+    {
+        if (gameOver || board[index] != '\0')
+            return;
+
+        board[index] = 'X';
+        
+        if (CheckWinner())
+        {
+            EndGame('X');
+        }
+        else if (IsBoardFull())
+        {
+            EndGame('\0');
+        }
+        else
+        {
+            isXTurn = false;
+            statusMessage = "AI's tur";
+            MakeAIMove();
+        }
+    }
+
+    private void MakeAIMove()
+    {
+        int aiMove = GetAIMove();
+        board[aiMove] = 'O';
+
+        if (CheckWinner())
+        {
+            EndGame('O');
+        }
+        else if (IsBoardFull())
+        {
+            EndGame('\0');
+        }
+        else
+        {
+            isXTurn = true;
+            statusMessage = "Spiller X's tur";
+        }
+    }
+
+    private int GetAIMove()
+    {
+        // Check for winning move
+        for (int i = 0; i < 9; i++)
+        {
+            if (board[i] == '\0')
+            {
+                board[i] = 'O';
+                if (CheckWinner())
+                {
+                    board[i] = '\0';
+                    return i;
+                }
+                board[i] = '\0';
+            }
+        }
+
+        // Check for blocking move
+        for (int i = 0; i < 9; i++)
+        {
+            if (board[i] == '\0')
+            {
+                board[i] = 'X';
+                if (CheckWinner())
+                {
+                    board[i] = '\0';
+                    return i;
+                }
+                board[i] = '\0';
+            }
+        }
+
+        // Choose a random empty cell
+        List<int> emptyCells = new List<int>();
+        for (int i = 0; i < 9; i++)
+        {
+            if (board[i] == '\0')
+            {
+                emptyCells.Add(i);
+            }
+        }
+
+        return emptyCells[random.Next(emptyCells.Count)];
+    }
+
+    private bool CheckWinner()
+    {
+        int[][] winningCombinations = new int[][]
+        {
+            new int[] {0, 1, 2}, new int[] {3, 4, 5}, new int[] {6, 7, 8}, // Rækker
+            new int[] {0, 3, 6}, new int[] {1, 4, 7}, new int[] {2, 5, 8}, // Kolonner
+            new int[] {0, 4, 8}, new int[] {2, 4, 6} // Diagonaler
+        };
+
+        foreach (var combination in winningCombinations)
+        {
+            if (board[combination[0]] != '\0' &&
+                board[combination[0]] == board[combination[1]] &&
+                board[combination[1]] == board[combination[2]])
+            {
+                winningCombo = combination;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsBoardFull()
+    {
+        return !board.Contains('\0');
+    }
+
+    private void EndGame(char winner)
+    {
+        gameOver = true;
+        if (winner == 'X')
+        {
+            statusMessage = "Spiller X har vundet!";
+            playerXScore++;
+        }
+        else if (winner == 'O')
+        {
+            statusMessage = "AI har vundet!";
+            playerOScore++;
+        }
+        else
+        {
+            statusMessage = "Uafgjort!";
+        }
+
+        UpdateHighscore();
+    }
+
+    private void ResetGame()
+    {
+        board = new char[9];
+        isXTurn = true;
+        statusMessage = "Spiller X's tur";
+        gameOver = false;
+        winningCombo = new int[3];
+    }
+
+    private string GetCellClass(int index)
+    {
+        string baseClass = board[index] switch
+        {
+            'X' => "x",
+            'O' => "o",
+            _ => ""
+        };
+
+        if (gameOver && winningCombo.Contains(index))
+        {
+            baseClass += " winner";
+        }
+
+        return baseClass;
+    }
+
+    private void UpdateHighscore()
+    {
+        highscores.Add(new HighscoreEntry { Name = "Spiller X", Score = playerXScore });
+        highscores.Add(new HighscoreEntry { Name = "AI", Score = playerOScore });
+        highscores = highscores.OrderByDescending(s => s.Score).Take(5).ToList();
+        SaveHighscores();
+    }
+
+    private void LoadHighscores()
+    {
+        
+        highscores = new List<HighscoreEntry>
+        {
+            
+        };
+    }
+
+    private void SaveHighscores()
+    {
+        // In a real application, you would save this to a file or database
+        // For this example, we'll just print to the console
+        Console.WriteLine("Highscores saved");
+    }
+
+    private class HighscoreEntry
+    {
+        public string Name { get; set; }
+        public int Score { get; set; }
+    }
+}
+
+<style>
+    .game-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: Arial, sans-serif;
+    }
+
+    .game-board {
+        display: grid;
+        grid-template-columns: repeat(3, 100px);
+        grid-template-rows: repeat(3, 100px);
+        gap: 5px;
+        margin: 20px;
+        background-color: #34495e;
+        border-radius: 10px;
+        padding: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .game-board.game-over {
+        opacity: 0.8;
+    }
+
+    .cell {
+        width: 100px;
+        height: 100px;
+        font-size: 48px;
+        margin: 5px;
+        border: none;
+        border-radius: 10px;
+        background-color: #2c3e50;
+        color: #ecf0f1;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .cell:hover {
+        background-color: #34495e;
+    }
+
+    .cell.x {
+        color: #3498db;
+    }
+
+    .cell.o {
+        color: #e74c3c;
+    }
+
+    .cell.winner {
+        background-color: #27ae60;
+        animation: pulse 1s infinite;
+    }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .symbol {
+        display: inline-block;
+        animation: popIn 0.3s ease-out;
+    }
+
+    @@keyframes popIn {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .game-info {
+        text-align: center;
+    }
+
+    .status-message {
+        font-size: 24px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .status-message.winner {
+        font-weight: bold;
+        color: #27ae60;
+        animation: celebrate 1s ease infinite;
+    }
+
+    @@keyframes celebrate {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+    }
+
+    .reset-button {
+        font-size: 18px;
+        padding: 10px 20px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .reset-button:hover {
+        background-color: #2980b9;
+    }
+
+    .highscore {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .highscore h2 {
+        color: #2c3e50;
+    }
+
+    .highscore ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .highscore li {
+        margin: 5px 0;
+        font-size: 18px;
+    }
+</style>
