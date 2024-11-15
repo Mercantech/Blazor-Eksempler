@@ -1,0 +1,90 @@
+﻿@page "/Converter"
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+
+<div class="container mt-4">
+    <h3>Connection String Converter</h3>
+    <p class="text-muted">Konverter Neon.tech PostgreSQL connection string til .NET format</p>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="form-group">
+                <label for="neonString">Neon.tech Connection String</label>
+                <input type="text" class="form-control" id="neonString" @bind="NeonString" 
+                       placeholder="postgresql://user:password@host/database?sslmode=require">
+            </div>
+            
+            <button class="btn btn-primary mt-3" @onclick="ConvertConnectionString">Konverter</button>
+            
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div class="alert alert-danger mt-3">
+                    @ErrorMessage
+                </div>
+            }
+            
+            @if (!string.IsNullOrEmpty(Result))
+            {
+                <div class="mt-4">
+                    <h4>Konverteret Connection String:</h4>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="text" class="form-control" readonly value="@Result">
+                            <button class="btn btn-outline-secondary" @onclick="CopyToClipboard">
+                                <span class="bi bi-clipboard"></span> Kopiér
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h5>JSON Format:</h5>
+                        <pre class="bg-light p-3 rounded"><code>{
+    "ConnectionStrings": {
+        "DefaultConnection": "@Result"
+    }
+}</code></pre>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private string NeonString { get; set; } = "";
+    private string Result { get; set; } = "";
+    private string ErrorMessage { get; set; } = "";
+    
+    private void ConvertConnectionString()
+    {
+        try
+        {
+            ErrorMessage = "";
+            
+            if (string.IsNullOrWhiteSpace(NeonString))
+            {
+                ErrorMessage = "Indtast venligst en connection string";
+                return;
+            }
+
+            Uri uri = new Uri(NeonString);
+            string[] userInfo = uri.UserInfo.Split(':');
+            string username = userInfo[0];
+            string password = userInfo[1];
+            string host = uri.Host;
+            string database = uri.LocalPath.TrimStart('/');
+
+            Result = $"Host={host};Username={username};Password={password};Database={database};sslmode=require;";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Ugyldig connection string format. Kontroller venligst input.";
+            Result = "";
+        }
+    }
+
+    private async Task CopyToClipboard()
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", Result);
+    }
+}
