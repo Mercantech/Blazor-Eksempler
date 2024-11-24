@@ -18,8 +18,10 @@ namespace Blazor
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
+            builder.Services.AddSignalR();
 
             var app = builder.Build();
+            app.MapHub<ChatHub>("/chathub");
 
             //GeoBlazor
             var provider = new FileExtensionContentTypeProvider();
