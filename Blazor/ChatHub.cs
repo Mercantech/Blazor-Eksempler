@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
+using DomainModels.EFCore;
+using Blazor.Data;
 
 public class ChatHub : Hub
 {
@@ -33,9 +35,28 @@ public class ChatHub : Hub
 
     private static Random random = new Random();
 
+    private readonly ApplicationDbContext _dbContext;
+
+    public ChatHub(ApplicationDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
     public async Task SendMessage(string user, string message)
     {
-        await Clients.All.SendAsync("ReceiveMessage", user, message);
+        var chatMessage = new ChatMessage
+        {
+            Id = Guid.NewGuid().ToString(),
+            User = user,
+            Message = message,
+            CreatedAt = DateTime.UtcNow.AddHours(2),
+            UpdatedAt = DateTime.UtcNow.AddHours(2)
+        };
+
+        _dbContext.ChatMessages.Add(chatMessage);
+        await _dbContext.SaveChangesAsync();
+
+        await Clients.All.SendAsync("ReceiveMessage", chatMessage.User, chatMessage.Message);
     }
 
     public string GetUniqueUserName()

@@ -1,6 +1,8 @@
 using Blazor.Components;
 using dymaptic.GeoBlazor.Core;
 using Microsoft.AspNetCore.StaticFiles;
+using Blazor.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Blazor
 {
@@ -13,7 +15,8 @@ namespace Blazor
             builder.Services.AddBlazorBootstrap();
             builder.Services.AddGeoBlazor(builder.Configuration);
 
-
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // Add services to the container.
             builder.Services.AddRazorComponents()
