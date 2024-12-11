@@ -8,7 +8,15 @@
 @if (loading)
 {
     <p>Loading...</p>
-} else
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="error-message">
+        <p>@errorMessage</p>
+        <button @onclick="RetryLoading" class="submit-button">Prøv igen</button>
+    </div>
+}
+else
 {
     <div class="game-wrapper">
         <div class="game-container">
@@ -55,13 +63,32 @@
     private int highScore;
     private bool loading = true;
     private bool gameOver = false;
+    private string errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        var response = await Http.GetFromJsonAsync<List<Country>>("https://restcountries.com/v3.1/all?fields=flags,name,cca3");
-        countries = response.ToList();
-        StartNewRound();
-        loading = false;
+        try 
+        {
+            var response = await Http.GetFromJsonAsync<List<Country>>("https://restcountries.com/v3.1/all?fields=flags,name,cca3");
+            if (response != null)
+            {
+                countries = response.ToList();
+                StartNewRound();
+            }
+            else 
+            {
+                errorMessage = "Kunne ikke hente landedata";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Der opstod en fejl: " + ex.Message;
+            Console.WriteLine($"API Error: {ex}");
+        }
+        finally 
+        {
+            loading = false;
+        }
     }
 
     private void StartNewRound()
@@ -115,6 +142,13 @@
         StartNewRound();
     }
 
+    private async Task RetryLoading()
+    {
+        errorMessage = null;
+        loading = true;
+        await OnInitializedAsync();
+    }
+
     public class Country
     {
         public Flags flags { get; set; }
@@ -155,6 +189,7 @@
         border: 1px solid #ccc;
         border-radius: 10px;
         background-color: #f9f9f9;
+        animation: fadeIn 0.5s ease-in;
     }
 
     .score-container {
@@ -177,6 +212,11 @@
         width: 200px;
         height: auto;
         margin-bottom: 20px;
+        transition: transform 0.3s ease;
+    }
+
+    .country-flag:hover {
+        transform: scale(1.1);
     }
 
     .guess-section {
@@ -194,6 +234,15 @@
         padding: 10px 20px;
         font-size: 1em;
         cursor: pointer;
+        transition: background-color 0.3s ease;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+    }
+
+    .submit-button:hover {
+        background-color: #45a049;
     }
 
     .game-over-container {
@@ -206,5 +255,33 @@
         border-radius: 10px;
         background-color: #f9f9f9;
         margin-top: 20px;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @@media (max-width: 768px) {
+        .game-wrapper {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .game-container,
+        .score-container {
+            width: 90%;
+            margin: 10px 0;
+        }
+    }
+
+    .error-message {
+        text-align: center;
+        padding: 20px;
+        background-color: #ffebee;
+        border: 1px solid #ffcdd2;
+        border-radius: 5px;
+        margin: 20px auto;
+        max-width: 500px;
     }
 </style>

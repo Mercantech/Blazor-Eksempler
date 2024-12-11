@@ -83,7 +83,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var jsonData = await Http.GetFromJsonAsync<List<JsonElement>>("https://opgaver.magsapi.com/Opgaver/Bilbasen");
+        var jsonData = await Http.GetFromJsonAsync<List<JsonElement>>("https://opgaver.mercantec.tech/Opgaver/Bilbasen");
         cars = jsonData.Select(ParseCar).ToList();
     }
 

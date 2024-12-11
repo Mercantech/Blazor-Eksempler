@@ -84,7 +84,7 @@ public class ChatHub : Hub
         await base.OnConnectedAsync();
     }
 
-    public override async Task OnDisconnectedAsync(Exception exception)
+    public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var user = GetUniqueUserName();
         await Clients.All.SendAsync("UserDisconnected", user);

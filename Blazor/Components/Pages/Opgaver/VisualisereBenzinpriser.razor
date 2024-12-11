@@ -98,7 +98,7 @@
 
     private async Task FetchBenzinDataAsync()
     {
-        var response = await _httpClient.GetAsync("https://opgaver.magsapi.com/Opgaver/miles95");
+        var response = await _httpClient.GetAsync("https://opgaver.mercantec.tech/Opgaver/miles95");
         if (response.IsSuccessStatusCode)
         {
             var jsonData = await response.Content.ReadFromJsonAsync<List<BenzinPrisData>>();
@@ -109,7 +109,7 @@
 
     private async Task FetchDieselDataAsync()
     {
-        var response = await _httpClient.GetAsync("https://opgaver.magsapi.com/Opgaver/diesel");
+        var response = await _httpClient.GetAsync("https://opgaver.mercantec.tech/Opgaver/diesel");
         if (response.IsSuccessStatusCode)
         {
             var jsonData = await response.Content.ReadFromJsonAsync<List<BenzinPrisData>>();
