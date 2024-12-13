@@ -1,0 +1,118 @@
+@page "/bootstrap/multiselect"
+
+<div class="custom-dropdown">
+    <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" 
+            @onclick="() => ToggleDropdown(false)"
+            data-bs-toggle="dropdown" aria-expanded="false">
+        @if (SelectedStates.Any())
+        {
+            @string.Join(", ", SelectedStates)
+            <span class="selected-count">@SelectedStates.Count</span>
+        }
+        else
+        {
+            <span>Vælg stater</span>
+        }
+    </button>
+    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" style="max-height: 300px; overflow-y: auto;">
+        @foreach (var state in States)
+        {
+            <div class="dropdown-item">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" 
+                           checked="@IsSelected(state)"
+                           @onchange="@(e => ToggleSelection(state))"
+                           id="@state" />
+                    <label class="form-check-label" for="@state">
+                        @state
+                    </label>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="mt-4">
+    <h5>Valgte stater:</h5>
+    <p>@string.Join(", ", SelectedStates)</p>
+</div>
+
+@code {
+    [Parameter]
+    public HashSet<string> SelectedStates { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<HashSet<string>> SelectedStatesChanged { get; set; }
+
+    private string[] States = {
+        "Alabama", "Alaska", "American Samoa", "Arizona"
+    };
+
+    private bool IsSelected(string state)
+    {
+        return SelectedStates.Contains(state);
+    }
+
+    private async Task ToggleSelection(string state)
+    {
+        if (SelectedStates.Contains(state))
+            SelectedStates.Remove(state);
+        else
+            SelectedStates.Add(state);
+
+        await SelectedStatesChanged.InvokeAsync(SelectedStates);
+    }
+
+    private async Task ToggleDropdown(bool isOpen)
+    {
+        if (!isOpen)
+        {
+            await SelectedStatesChanged.InvokeAsync(SelectedStates);
+        }
+    }
+}
+
+<style>
+    .custom-dropdown {
+        position: relative;
+        width: 300px;
+    }
+
+    .dropdown-toggle {
+        width: 100%;
+        text-align: left;
+        position: relative;
+        background-color: white;
+        border: 1px solid #ced4da;
+        color: #212529;
+        padding: 0.5rem 1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .dropdown-toggle:hover {
+        background-color: white;
+        border-color: #80bdff;
+    }
+
+    .dropdown-toggle::after {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .dropdown-menu {
+        padding: 10px;
+    }
+
+    .dropdown-item:hover {
+        background-color: transparent;
+    }
+
+    .form-check {
+        padding-left: 25px;
+    }
+</style>
+

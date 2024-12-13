@@ -69,7 +69,11 @@ else
     {
         try 
         {
-            var response = await Http.GetFromJsonAsync<List<Country>>("https://restcountries.com/v3.1/all?fields=flags,name,cca3");
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10)); // 10 sekunders timeout
+            var response = await Http.GetFromJsonAsync<List<Country>>(
+                "https://restcountries.com/v3.1/all?fields=flags,name,cca3",
+                cts.Token
+            );
             if (response != null)
             {
                 countries = response.ToList();
@@ -79,6 +83,10 @@ else
             {
                 errorMessage = "Kunne ikke hente landedata";
             }
+        }
+        catch (OperationCanceledException)
+        {
+            errorMessage = "Forbindelsen til API'et tog for lang tid. Prøv igen.";
         }
         catch (Exception ex)
         {

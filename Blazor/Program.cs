@@ -38,6 +38,8 @@ namespace Blazor
                 .AddInteractiveServerComponents();
             builder.Services.AddSignalR();
 
+            builder.Services.AddHttpClient();
+
             var app = builder.Build();
             app.MapHub<ChatHub>("/chathub");
 
