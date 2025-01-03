@@ -1,0 +1,337 @@
+@page "/opgaver/countries-a-z"
+@inject HttpClient Http
+
+<h3>Lande A-Z</h3>
+
+        <div class="input-section">
+            <input @bind="userGuess" 
+                   @bind:event="oninput"
+                   @onkeyup="HandleKeyPress"
+                   placeholder="Skriv navnet på et land..."
+                   class="country-input" />
+            
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="@(isError ? "error-message" : "success-message")">
+                    @message
+                </div>
+            }
+        </div>
+        
+@if (loading)
+{
+    <p>Indlæser...</p>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="error-message">
+        <p>@errorMessage</p>
+        <button @onclick="RetryLoading" class="submit-button">Prøv igen</button>
+    </div>
+}
+else
+{
+    <div class="game-container">
+        <div class="alphabet-grid">
+            @foreach (var letter in alphabet)
+            {
+                var country = selectedCountries.FirstOrDefault(c => c.Key == letter);
+                <div class="letter-box @(country.Value != null ? "completed" : "")">
+                    @if (country.Value != null)
+                    {
+                        <img src="@country.Value.flags.png" alt="@country.Value.name.common flag" />
+                        <span class="country-name">@country.Value.name.common</span>
+                    }
+                    else
+                    {
+                        <span class="letter">@letter</span>
+                        <button @onclick="@(() => ShowHint(letter))" class="hint-button">Hint</button>
+                    }
+                </div>
+            }
+        </div>
+
+    </div>
+}
+
+@code {
+    private bool loading = true;
+    private string errorMessage;
+    private List<Country> availableCountries = new();
+    private Dictionary<string, Country> selectedCountries = new();
+    private string selectedLetter = "";
+    private string selectedCountryCode = "";
+    private List<string> alphabet = "ABCDEFGHIJKLMNOPQRSTUVWYZ".Select(c => c.ToString()).ToList();
+    private string userGuess = "";
+    private string message = "Velkommen til lande A-Z, du skal se om du kan huske et land for hvert bogstav!";
+    private bool isError;
+
+    private bool CanSubmit => !string.IsNullOrEmpty(selectedLetter) && !string.IsNullOrEmpty(selectedCountryCode);
+
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try 
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await Http.GetFromJsonAsync<List<Country>>(
+                "https://restcountries.com/v3.1/all?fields=flags,name,cca3",
+                cts.Token
+            );
+            if (response != null)
+            {
+                availableCountries = response;
+            }
+            else 
+            {
+                errorMessage = "Kunne ikke hente landedata";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Der opstod en fejl: " + ex.Message;
+        }
+        finally 
+        {
+            loading = false;
+        }
+    }
+
+    private void SubmitAnswer()
+    {
+        if (CanSubmit)
+        {
+            var country = availableCountries.First(c => c.cca3 == selectedCountryCode);
+            selectedCountries[selectedLetter] = country;
+            selectedLetter = "";
+            selectedCountryCode = "";
+        }
+    }
+
+    private int NumberOfContriesWithLetterHint(char letter)
+    {
+        return availableCountries.Where(c => c.name.common.StartsWith(letter.ToString(), StringComparison.OrdinalIgnoreCase)).Count();
+    }
+
+    private async Task RetryLoading()
+    {
+        errorMessage = null;
+        loading = true;
+        await OnInitializedAsync();
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await CheckAnswer();
+        }
+    }
+
+    private async Task CheckAnswer()
+    {
+        if (string.IsNullOrWhiteSpace(userGuess))
+            return;
+
+        var guess = userGuess.Trim();
+        var matchingCountry = availableCountries.FirstOrDefault(c => 
+            c.name.common.Equals(guess, StringComparison.OrdinalIgnoreCase));
+
+        if (matchingCountry == null)
+        {
+            ShowMessage($"'{guess}' er ikke et gyldigt land", true);
+            return;
+        }
+
+        var firstLetter = matchingCountry.name.common.Substring(0, 1).ToUpper();
+        
+        if (!alphabet.Contains(firstLetter))
+        {
+            ShowMessage("Dette land starter ikke med et bogstav fra A-Z", true);
+            return;
+        }
+
+        if (selectedCountries.ContainsKey(firstLetter))
+        {
+            ShowMessage($"Du har allerede brugt et land med bogstavet {firstLetter}", true);
+            return;
+        }
+
+        selectedCountries[firstLetter] = matchingCountry;
+        ShowMessage($"Korrekt! {matchingCountry.name.common} er tilføjet til {firstLetter}", false);
+        userGuess = "";
+
+        if (selectedCountries.Count == alphabet.Count)
+        {
+            ShowMessage("Tillykke! Du har fundet et land for hvert bogstav!", false);
+        }
+    }
+
+    private void ShowMessage(string text, bool error)
+    {
+        message = text;
+        isError = error;
+        StateHasChanged();
+
+    }
+
+    private void ShowHint(string letter)
+    {
+        var count = availableCountries.Count(c => 
+            c.name.common.StartsWith(letter, StringComparison.OrdinalIgnoreCase));
+        ShowMessage($"Der er {count} lande der starter med {letter}", false);
+    }
+
+    public class Country
+    {
+        public Flags flags { get; set; }
+        public Name name { get; set; }
+        public string cca3 { get; set; }
+    }
+
+    public class Flags
+    {
+        public string png { get; set; }
+        public string svg { get; set; }
+        public string alt { get; set; }
+    }
+
+    public class Name
+    {
+        public string common { get; set; }
+        public string official { get; set; }
+    }
+}
+
+<style>
+    .game-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .alphabet-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .letter-box {
+        border: 2px solid #ccc;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .letter-box.completed {
+        border-color: #4CAF50;
+    }
+
+    .letter {
+        font-size: 2em;
+        font-weight: bold;
+        color: #666;
+    }
+
+    .letter-box img {
+        max-width: 100px;
+        height: auto;
+        margin-bottom: 10px;
+    }
+
+    .country-name {
+        font-size: 0.9em;
+        color: #333;
+    }
+
+    .input-section {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        margin: 20px auto;
+        max-width: 800px;
+        padding: 0 20px;
+    }
+
+    .country-input {
+        flex: 1;
+        padding: 12px;
+        font-size: 1.1em;
+        border: 2px solid #ccc;
+        border-radius: 4px;
+        transition: border-color 0.2s ease;
+    }
+
+    .country-input:focus {
+        outline: none;
+        border-color: #2196F3;
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+    }
+
+    .success-message, .error-message {
+        flex: 1;
+        text-align: center;
+        padding: 12px;
+        border-radius: 5px;
+        margin: 0;
+    }
+
+    .success-message {
+        background-color: #e8f5e9;
+        border: 1px solid #a5d6a7;
+        color: #2e7d32;
+    }
+
+    .error-message {
+        background-color: #ffebee;
+        border: 1px solid #ffcdd2;
+        color: #c62828;
+    }
+
+    .submit-button {
+        padding: 8px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .submit-button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+
+    .hint-button {
+        margin-top: 10px;
+        padding: 6px 12px;
+        background-color: #2196F3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .hint-button:hover {
+        background-color: #1976D2;
+        transform: scale(1.05);
+    }
+
+    .hint-button:active {
+        transform: scale(0.95);
+    }
+
+    .hint-button:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.4);
+    }
+</style>
