@@ -24,15 +24,17 @@ else
             @if (!gameOver)
             {
                 <div class="guess-section">
-                    <label for="guessInput">Which country does this flag belong to?</label>
-                    <select id="guessInput" @bind="selectedAnswer" class="guess-dropdown">
-                        <option value="">Select a country</option>
+                    <p>Hvilket land tilhører dette flag?</p>
+                    <div class="options-grid">
                         @foreach (var option in options)
                         {
-                            <option value="@option.cca3">@option.name.common</option>
+                            <button 
+                                @onclick="() => CheckAnswer(option.cca3)" 
+                                class="option-button">
+                                @option.name.common
+                            </button>
                         }
-                    </select>
-                    <button @onclick="CheckAnswer" class="submit-button">Submit</button>
+                    </div>
                 </div>
             }
             else
@@ -58,7 +60,6 @@ else
     private List<Country> countries = new List<Country>();
     private List<Country> options = new List<Country>();
     private string currentFlag;
-    private string selectedAnswer;
     private int score;
     private int highScore;
     private bool loading = true;
@@ -67,6 +68,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        if (!loading) return;
+
         try 
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10)); 
@@ -78,25 +81,24 @@ else
             if (response != null && response.Any())
             {
                 Console.WriteLine("Using OpgaverAPI");
-
+                countries = response.ToList();
+                StartNewRound();
+                loading = false;
+                return;
+            }
+            
+            response = await Http.GetFromJsonAsync<List<Country>>(
+                "https://restcountries.com/v3.1/all?fields=flags,name,cca3",
+                cts.Token
+            );
+            if (response != null)
+            {
                 countries = response.ToList();
                 StartNewRound();
             }
             else 
             {
-                response = await Http.GetFromJsonAsync<List<Country>>(
-                    "https://restcountries.com/v3.1/all?fields=flags,name,cca3",
-                    cts.Token
-                );
-                if (response != null)
-                {
-                    countries = response.ToList();
-                    StartNewRound();
-                }
-                else 
-                {
-                    errorMessage = "Kunne ikke hente landedata";
-                }
+                errorMessage = "Kunne ikke hente landedata";
             }
         }
         catch (OperationCanceledException)
@@ -105,28 +107,8 @@ else
         }
         catch (Exception ex)
         {
-            try 
-            {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                var response = await Http.GetFromJsonAsync<List<Country>>(
-                    "https://restcountries.com/v3.1/all?fields=flags,name,cca3",
-                    cts.Token
-                );
-                if (response != null)
-                {
-                    countries = response.ToList();
-                    StartNewRound();
-                }
-                else 
-                {
-                    errorMessage = "Kunne ikke hente landedata";
-                }
-            }
-            catch (Exception innerEx)
-            {
-                errorMessage = "Der opstod en fejl ved begge API'er: " + innerEx.Message;
-                Console.WriteLine($"API Error: {innerEx}");
-            }
+            errorMessage = "Der opstod en fejl: " + ex.Message;
+            Console.WriteLine($"API Error: {ex}");
         }
         finally 
         {
@@ -147,34 +129,30 @@ else
             }
         }
         currentFlag = options[random.Next(options.Count)].flags.png;
-        selectedAnswer = "";
     }
 
-    private void CheckAnswer()
+    private void CheckAnswer(string answer)
     {
-        if (!string.IsNullOrWhiteSpace(selectedAnswer))
+        var correctCountry = options.FirstOrDefault(c => c.flags.png == currentFlag);
+        if (correctCountry != null && answer.Equals(correctCountry.cca3, StringComparison.OrdinalIgnoreCase))
         {
-            var correctCountry = options.FirstOrDefault(c => c.flags.png == currentFlag);
-            if (correctCountry != null && selectedAnswer.Equals(correctCountry.cca3, StringComparison.OrdinalIgnoreCase))
+            score++;
+            if (score > highScore)
             {
-                score++;
-                if (score > highScore)
-                {
-                    highScore = score;
-                }
-                if (score >= 10)
-                {
-                    gameOver = true;
-                }
-                else
-                {
-                    StartNewRound();
-                }
+                highScore = score;
             }
-            else
+            if (score >= 10)
             {
                 gameOver = true;
             }
+            else
+            {
+                StartNewRound();
+            }
+        }
+        else
+        {
+            gameOver = true;
         }
     }
 
@@ -252,8 +230,10 @@ else
     }
 
     .country-flag {
-        width: 200px;
-        height: auto;
+        width: 300px;
+        height: 200px;
+        object-fit: contain;
+        background-color: #f0f0f0;
         margin-bottom: 20px;
         transition: transform 0.3s ease;
     }
@@ -264,13 +244,6 @@ else
 
     .guess-section {
         margin-bottom: 20px;
-    }
-
-    .guess-dropdown {
-        width: 100%;
-        padding: 10px;
-        font-size: 1em;
-        margin-bottom: 10px;
     }
 
     .submit-button {
@@ -326,5 +299,27 @@ else
         border-radius: 5px;
         margin: 20px auto;
         max-width: 500px;
+    }
+
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .option-button {
+        padding: 15px;
+        font-size: 1em;
+        cursor: pointer;
+        background-color: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+    }
+
+    .option-button:hover {
+        background-color: #e9ecef;
+        transform: translateY(-2px);
     }
 </style>
