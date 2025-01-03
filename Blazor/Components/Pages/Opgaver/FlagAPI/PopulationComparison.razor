@@ -63,10 +63,74 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var response = await Http.GetFromJsonAsync<List<Country>>("https://restcountries.com/v3.1/all?fields=name,population,flags");
-        countries = response.Where(c => c.population > 0).ToList();
-        StartNewRound(null);
-        loading = false;
+        try 
+        {
+            // Prøv først det nye API
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await Http.GetFromJsonAsync<List<Country>>(
+                "https://opgaver.mercantec.tech/api/countries",
+                cts.Token
+            );
+            
+            if (response != null && response.Any())
+            {
+                Console.WriteLine("Using OpgaverAPI");
+                countries = response.Where(c => c.population > 0).ToList();
+            }
+            else 
+            {
+                // Hvis det nye API ikke returnerer data, prøv det oprindelige API
+                response = await Http.GetFromJsonAsync<List<Country>>(
+                    "https://restcountries.com/v3.1/all?fields=name,population,flags",
+                    cts.Token
+                );
+                if (response != null)
+                {
+                    countries = response.Where(c => c.population > 0).ToList();
+                }
+            }
+
+            if (countries.Any())
+            {
+                StartNewRound(null);
+            }
+            else 
+            {
+                lastComparison = "Kunne ikke hente landedata";
+                gameOver = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            try 
+            {
+                // Hvis det nye API fejler, prøv det oprindelige API
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var response = await Http.GetFromJsonAsync<List<Country>>(
+                    "https://restcountries.com/v3.1/all?fields=name,population,flags",
+                    cts.Token
+                );
+                if (response != null)
+                {
+                    countries = response.Where(c => c.population > 0).ToList();
+                    StartNewRound(null);
+                }
+                else 
+                {
+                    lastComparison = "Kunne ikke hente landedata";
+                    gameOver = true;
+                }
+            }
+            catch (Exception innerEx)
+            {
+                lastComparison = "Der opstod en fejl ved begge API'er: " + innerEx.Message;
+                gameOver = true;
+            }
+        }
+        finally 
+        {
+            loading = false;
+        }
     }
 
     private void StartNewRound(Country? winner)

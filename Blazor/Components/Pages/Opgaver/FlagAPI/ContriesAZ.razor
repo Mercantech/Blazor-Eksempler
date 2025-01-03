@@ -75,21 +75,54 @@ else
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             var response = await Http.GetFromJsonAsync<List<Country>>(
-                "https://restcountries.com/v3.1/all?fields=flags,name,cca3",
+                "https://opgaver.mercantec.tech/api/countries",
                 cts.Token
             );
-            if (response != null)
+            
+            if (response != null && response.Any())
             {
+                Console.WriteLine("Using OpgaverAPI");
+
                 availableCountries = response;
             }
             else 
             {
-                errorMessage = "Kunne ikke hente landedata";
+                response = await Http.GetFromJsonAsync<List<Country>>(
+                    "https://restcountries.com/v3.1/all?fields=flags,name,cca3",
+                    cts.Token
+                );
+                if (response != null)
+                {
+                    availableCountries = response;
+                }
+                else 
+                {
+                    errorMessage = "Kunne ikke hente landedata";
+                }
             }
         }
         catch (Exception ex)
         {
-            errorMessage = "Der opstod en fejl: " + ex.Message;
+            try 
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var response = await Http.GetFromJsonAsync<List<Country>>(
+                    "https://restcountries.com/v3.1/all?fields=flags,name,cca3",
+                    cts.Token
+                );
+                if (response != null)
+                {
+                    availableCountries = response;
+                }
+                else 
+                {
+                    errorMessage = "Kunne ikke hente landedata";
+                }
+            }
+            catch (Exception innerEx)
+            {
+                errorMessage = "Der opstod en fejl ved begge API'er: " + innerEx.Message;
+            }
         }
         finally 
         {
