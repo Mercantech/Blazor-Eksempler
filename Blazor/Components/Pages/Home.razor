@@ -2,92 +2,214 @@
 
 <PageTitle>Home</PageTitle>
 
-<h1>Velkommen til Blazor Eksempler!</h1>
-
-<p>Denne app indeholder forskellige eksempler på, hvad man kan lave med Blazor. Nedenfor er en oversigt over de forskellige sider:</p>
+<div class="hero-section">
+    <h1>Velkommen til Blazor Eksempler!</h1>
+    <p class="lead">Udforsk forskellige eksempler og implementationer med Blazor</p>
+</div>
 
 <div class="container">
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Opgaver</h5>
-                    <p class="card-text">En samling af forskellige opgaver og løsninger.</p>
-                    <a href="/Opgaver" class="btn btn-primary">Gå til Opgaver</a>
-                </div>
+    <!-- Kernekomponenter -->
+    <div class="category-section">
+        <h4 class="category-title">Kernekomponenter</h4>
+        <p class="category-description">Grundlæggende Blazor komponenter og funktionalitet.</p>
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <NavLink href="/Opgaver" class="card-link">
+                    <div class="card d-flex flex-row align-items-center">
+                        <div class="card-icon">
+                            <i class="bi bi-collection"></i>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Opgaver</h5>
+                            <p class="card-text">En samling af forskellige opgaver og løsninger.</p>
+                        </div>
+                    </div>
+                </NavLink>
+            </div>
+            <div class="col-md-6 mb-4">
+                <NavLink href="/Modal" class="card-link">
+                    <div class="card d-flex flex-row align-items-center">
+                        <div class="card-icon">
+                            <i class="bi bi-window"></i>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Modal</h5>
+                            <p class="card-text">Implementering af modale vinduer i Blazor.</p>
+                        </div>
+                    </div>
+                </NavLink>
             </div>
         </div>
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Charts</h5>
-                    <p class="card-text">Eksempler på, hvordan man kan lave forskellige typer diagrammer.</p>
-                    <a href="/charts" class="btn btn-primary">Gå til Charts</a>
-                </div>
+    </div>
+
+    <!-- Visualisering -->
+    <div class="category-section">
+        <h4 class="category-title">Visualisering & Grafik</h4>
+        <p class="category-description">Avancerede visualiseringsværktøjer og grafiske komponenter.</p>
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <NavLink href="/charts" class="card-link">
+                    <div class="card d-flex flex-row align-items-center">
+                        <div class="card-icon">
+                            <i class="bi bi-bar-chart"></i>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Charts</h5>
+                            <p class="card-text">Forskellige typer af diagrammer og datavisualisering.</p>
+                        </div>
+                    </div>
+                </NavLink>
+            </div>
+            <div class="col-md-6 mb-4">
+                <NavLink href="/ThreeJS" class="card-link">
+                    <div class="card d-flex flex-row align-items-center">
+                        <div class="card-icon">
+                            <i class="bi bi-box"></i>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">ThreeJS</h5>
+                            <p class="card-text">3D-visualisering med ThreeJS integration.</p>
+                        </div>
+                    </div>
+                </NavLink>
+            </div>
+            <div class="col-md-6 mb-4">
+                <NavLink href="/map" class="card-link">
+                    <div class="card d-flex flex-row align-items-center">
+                        <div class="card-icon">
+                            <i class="bi bi-geo-alt"></i>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Maps</h5>
+                            <p class="card-text">Kortintegration og geografisk visualisering.</p>
+                        </div>
+                    </div>
+                </NavLink>
+            </div>
+            <div class="col-md-6 mb-4">
+                <NavLink href="/Carousel" class="card-link">
+                    <div class="card d-flex flex-row align-items-center">
+                        <div class="card-icon">
+                            <i class="bi bi-images"></i>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Carousel</h5>
+                            <p class="card-text">Dynamisk billedkarrusel implementation.</p>
+                        </div>
+                    </div>
+                </NavLink>
             </div>
         </div>
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Sensor</h5>
-                    <p class="card-text">Eksempel på, hvordan man kan bruge sensorer med Blazor.</p>
-                    <a href="/Sensor" class="btn btn-primary">Gå til Sensor</a>
-                </div>
+    </div>
+
+    <!-- Interaktive Features -->
+    <div class="category-section">
+        <h4 class="category-title">Interaktive Features</h4>
+        <p class="category-description">Realtids-interaktion og sensor-integration.</p>
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <NavLink href="/Sensor" class="card-link">
+                    <div class="card d-flex flex-row align-items-center">
+                        <div class="card-icon">
+                            <i class="bi bi-broadcast"></i>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Sensor</h5>
+                            <p class="card-text">Integration med enhedens sensorer.</p>
+                        </div>
+                    </div>
+                </NavLink>
             </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">ThreeJS</h5>
-                    <p class="card-text">Eksempel på, hvordan man kan bruge 3D-biblioteket ThreeJS med Blazor.</p>
-                    <a href="/ThreeJS" class="btn btn-primary">Gå til ThreeJS</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Modal</h5>
-                    <p class="card-text">Eksempel på, hvordan man kan lave modale vinduer i Blazor.</p>
-                    <a href="/Modal" class="btn btn-primary">Gå til Modal</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Maps</h5>
-                    <p class="card-text">Eksempel på, hvordan man kan integrere kort i en Blazor app.</p>
-                    <a href="/map" class="btn btn-primary">Gå til Maps</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Carousel</h5>
-                    <p class="card-text">Eksempel på, hvordan man kan lave et billedkarrusel i Blazor.</p>
-                    <a href="/Carousel" class="btn btn-primary">Gå til Carousel</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Connection Converter</h5>
-                    <p class="card-text">Et værktøj til at konvertere forbindelsesstrenge mellem forskellige databaser.</p>
-                    <a href="/DBConverter" class="btn btn-primary">Gå til Connection Converter</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Chat Room</h5>
-                    <p class="card-text">En simpel chat app lavet med Blazor og SignalR.</p>
-                    <a href="/chatroom" class="btn btn-primary">Gå til Chat Room</a>
-                </div>
+            <div class="col-md-6 mb-4">
+                <NavLink href="/chatroom" class="card-link">
+                    <div class="card d-flex flex-row align-items-center">
+                        <div class="card-icon">
+                            <i class="bi bi-chat-dots"></i>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Chat Room</h5>
+                            <p class="card-text">Realtids-chat med SignalR integration.</p>
+                        </div>
+                    </div>
+                </NavLink>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .hero-section {
+        text-align: center;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+    }
+
+    .hero-section h1 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+
+    .lead {
+        color: #6c757d;
+        font-size: 1.25rem;
+    }
+
+    .category-section {
+        margin-bottom: 3rem;
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    .category-title {
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .category-description {
+        color: #6c757d;
+        margin-bottom: 1.5rem;
+    }
+
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none;
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .card-link {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .card-icon {
+        font-size: 2rem;
+        margin: 15px;
+        color: #007bff;
+        width: 80px;
+        text-align: center;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .card-title {
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .card-text {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+</style>

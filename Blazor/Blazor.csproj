@@ -51,8 +51,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Components\Pages\Opgaver\FlagQuiz.razor" />
-    <None Include="Components\Pages\Opgaver\Border.razor" />
     <None Include="Components\Pages\Opgaver\OpgaveOversigt.razor" />
   </ItemGroup>
 
