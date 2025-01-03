@@ -1,0 +1,217 @@
+@page "/dmr"
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<PageTitle>Bil Information</PageTitle>
+7
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h2 class="mb-0">Køretøjsinformation</h2>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input @bind="registrationNumber" @bind:event="oninput" @onkeypress="HandleKeyPress" 
+                               class="form-control" placeholder="Indtast registreringsnummer..." />
+                        <button class="btn btn-primary" @onclick="SearchVehicle" disabled="@isLoading">
+                            @if (isLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            }
+                            Søg
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        @if (errorMessage != null)
+        {
+            <div class="alert alert-danger m-3 mb-0">
+                @errorMessage
+            </div>
+        }
+
+        @if (vehicle != null)
+        {
+            <div class="card-body">
+                <h3>@vehicle.MaerkeModelVariant</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-4">Reg. nummer</dt>
+                            <dd class="col-sm-8">@vehicle.Registreringsnummer</dd>
+
+                            <dt class="col-sm-4">Stelnummer</dt>
+                            <dd class="col-sm-8">@vehicle.Stelnummer</dd>
+
+                            <dt class="col-sm-4">Type</dt>
+                            <dd class="col-sm-8">@vehicle.Art</dd>
+
+                            <dt class="col-sm-4">Farve</dt>
+                            <dd class="col-sm-8">@vehicle.Farve</dd>
+
+                            <dt class="col-sm-4">Model år</dt>
+                            <dd class="col-sm-8">@vehicle.ModelAar</dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-4">Status</dt>
+                            <dd class="col-sm-8">@vehicle.Status</dd>
+
+                            <dt class="col-sm-4">Første reg.</dt>
+                            <dd class="col-sm-8">@vehicle.FoersteRegistreringsdato</dd>
+
+                            <dt class="col-sm-4">Anvendelse</dt>
+                            <dd class="col-sm-8">@vehicle.Anvendelse</dd>
+
+                            <dt class="col-sm-4">Kilometerstand</dt>
+                            <dd class="col-sm-8">@vehicle.Kilometerstand</dd>
+
+                            <dt class="col-sm-4">NCAP Test</dt>
+                            <dd class="col-sm-8">@vehicle.BestaaetNCAPTest</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card-body text-center text-muted">
+                <p>Indtast et registreringsnummer for at se køretøjsoplysninger</p>
+            </div>
+        }
+    </div>
+
+    <div class="mt-4">
+        <h2>Seneste opslag</h2>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nummerplade</th>
+                        <th>Køretøj</th>
+                        <th>Sidst opdateret</th>
+                        <th>Handling</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (vehicles != null)
+                    {
+                        @foreach (var v in vehicles)
+                        {
+                            <tr>
+                                <td>@v.Nummerplade</td>
+                                <td>@v.Køretøj</td>
+                                <td>@v.SidstOpdateret.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" @onclick="() => SearchSpecificVehicle(v.Nummerplade)">
+                                        Vis detaljer
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? registrationNumber;
+    private VehicleInfo? vehicle;
+    private List<VehicleListItem>? vehicles;
+    private string? errorMessage;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVehicles();
+    }
+
+    private async Task LoadVehicles()
+    {
+        try
+        {
+            vehicles = await Http.GetFromJsonAsync<List<VehicleListItem>>("https://dmrapi.mercantec.tech/MotorRegister/vehicles");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Der opstod en fejl ved indlæsning af køretøjslisten";
+            Console.WriteLine(ex);
+        }
+    }
+
+    private async Task SearchSpecificVehicle(string regNr)
+    {
+        registrationNumber = regNr;
+        await SearchVehicle();
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchVehicle();
+        }
+    }
+
+    private async Task SearchVehicle()
+    {
+        if (!string.IsNullOrWhiteSpace(registrationNumber))
+        {
+            try
+            {
+                isLoading = true;
+                errorMessage = null;
+                vehicle = null;
+                
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+                vehicle = await Http.GetFromJsonAsync<VehicleInfo>(
+                    $"https://dmrapi.mercantec.tech/MotorRegister/vehicle/{registrationNumber}", 
+                    cts.Token);
+
+                await LoadVehicles();
+            }
+            catch (OperationCanceledException)
+            {
+                errorMessage = "Søgningen tog for lang tid. Prøv igen.";
+            }
+            catch (Exception ex)
+            {
+                errorMessage = "Der opstod en fejl ved søgning efter køretøjet. Prøv igen senere.";
+                Console.WriteLine(ex);
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+    }
+
+    public class VehicleInfo
+    {
+        public string Stelnummer { get; set; }
+        public string MaerkeModelVariant { get; set; }
+        public string Art { get; set; }
+        public string Registreringsnummer { get; set; }
+        public string FoersteRegistreringsdato { get; set; }
+        public string Anvendelse { get; set; }
+        public string Status { get; set; }
+        public string Farve { get; set; }
+        public string ModelAar { get; set; }
+        public string Kilometerstand { get; set; }
+        public string BestaaetNCAPTest { get; set; }
+    }
+
+    public class VehicleListItem
+    {
+        public string Nummerplade { get; set; }
+        public string Køretøj { get; set; }
+        public DateTime SidstOpdateret { get; set; }
+    }
+}
