@@ -1,0 +1,183 @@
+@page "/opgaver/flagapi"
+
+<h3>FlagAPI Dokumentation</h3>
+
+<p> Vi bruger som standard API fra <a href="https://restcountries.com/">https://restcountries.com/</a>, dog kan vi også bruge vores egen API, som findes på <a href="https://opgaver.mercantec.tech/swagger/index.html">https://opgaver.mercantec.tech/swagger/index.html</a>.</p>
+
+<h4>Filter Funktion</h4>
+
+<div class="card p-4 mb-4">
+    <h5>Byg din egen API forespørgsel</h5>
+    
+    <div class="mb-3">
+        <label class="form-label">Region:</label>
+        <select class="form-select" @bind="selectedRegion">
+            <option value="">Vælg region...</option>
+            <option value="Europe">Europe</option>
+            <option value="Asia">Asia</option>
+            <option value="Africa">Africa</option>
+            <option value="Americas">Americas</option>
+            <option value="Oceania">Oceania</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Population:</label>
+        <div class="row">
+            <div class="col">
+                <input type="number" class="form-control" placeholder="Min befolkning" @bind="minPopulation">
+            </div>
+            <div class="col">
+                <input type="number" class="form-control" placeholder="Max befolkning" @bind="maxPopulation">
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" @bind="isLandlocked">
+            <label class="form-check-label">Indlandsstat</label>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" @bind="isUNMember">
+            <label class="form-check-label">FN Medlem</label>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <strong>Generated URL:</strong>
+        <code>@GenerateUrl()</code>
+    </div>
+
+    <button class="btn btn-primary mb-3" @onclick="FetchData">Hent Data</button>
+
+    @if (isLoading)
+    {
+        <div class="alert alert-info">Henter data...</div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+    else if (countries != null)
+    {
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">JSON Resultat (@countries.Count() lande)</h6>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="ToggleJsonView">
+                    @(showFullJson ? "Vis Mindre" : "Vis Mere")
+                </button>
+            </div>
+            <div class="card-body">
+                <pre class="json-container @(showFullJson ? "" : "json-truncated")"><code>@JsonResult</code></pre>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string? selectedRegion;
+    private int? minPopulation;
+    private int? maxPopulation;
+    private bool? isLandlocked;
+    private bool? isUNMember;
+    private List<Country>? countries;
+    private bool isLoading;
+    private string? errorMessage;
+    private bool showFullJson;
+    private HttpClient httpClient = new HttpClient();
+
+    private string? JsonResult => countries == null 
+        ? null 
+        : System.Text.Json.JsonSerializer.Serialize(countries, new System.Text.Json.JsonSerializerOptions 
+        { 
+            WriteIndented = true 
+        });
+
+    private string GenerateUrl()
+    {
+        var baseUrl = "https://opgaver.mercantec.tech/api/countries/filter";
+        var parameters = new List<string>();
+
+        if (!string.IsNullOrEmpty(selectedRegion))
+            parameters.Add($"region={selectedRegion}");
+        
+        if (minPopulation.HasValue)
+            parameters.Add($"minPopulation={minPopulation}");
+        
+        if (maxPopulation.HasValue)
+            parameters.Add($"maxPopulation={maxPopulation}");
+        
+        if (isLandlocked.HasValue)
+            parameters.Add($"landlocked={isLandlocked.Value}");
+        
+        if (isUNMember.HasValue)
+            parameters.Add($"unMember={isUNMember.Value}");
+
+        if (parameters.Any())
+            return $"{baseUrl}?{string.Join("&", parameters)}";
+            
+        return baseUrl;
+    }
+
+    private async Task FetchData()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            var response = await httpClient.GetAsync(GenerateUrl());
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                countries = System.Text.Json.JsonSerializer.Deserialize<List<Country>>(content);
+            }
+            else
+            {
+                errorMessage = $"Fejl: {response.StatusCode} - {response.ReasonPhrase}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Der skete en fejl: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ToggleJsonView()
+    {
+        showFullJson = !showFullJson;
+    }
+}
+
+<style>
+    code {
+        word-break: break-all;
+    }
+
+    .json-container {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 4px;
+        margin: 0;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .json-truncated {
+        max-height: 200px;
+    }
+
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+</style>
+
