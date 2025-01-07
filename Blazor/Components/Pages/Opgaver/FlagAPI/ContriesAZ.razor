@@ -7,7 +7,7 @@
             <input @bind="userGuess" 
                    @bind:event="oninput"
                    @onkeyup="HandleKeyPress"
-                   placeholder="Skriv navnet på et land..."
+                   placeholder="Skriv navnet på et land på engelsk..."
                    class="country-input" />
             
             @if (!string.IsNullOrEmpty(message))
