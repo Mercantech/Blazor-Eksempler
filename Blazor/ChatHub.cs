@@ -90,4 +90,4 @@ public class ChatHub : Hub
         await Clients.All.SendAsync("UserDisconnected", user);
         await base.OnDisconnectedAsync(exception);
     }
-} 
+}

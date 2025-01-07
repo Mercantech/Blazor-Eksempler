@@ -65,6 +65,9 @@
     [Parameter]
     public double MaxZoom { get; set; } = 3.0;
 
+    [Parameter]
+    public double MinZoom { get; set; } = 1.0;
+
     private int currentIndex = 0;
     private bool isScrollEnabled = false;
     private bool isAutoScrollEnabled = false;
@@ -81,7 +84,8 @@
     {
         if (EnableAutoScroll)
         {
-            autoScrollTimer = new System.Threading.Timer(AutoScroll, null, Timeout.Infinite, AutoScrollInterval);
+            isAutoScrollEnabled = true;
+            autoScrollTimer = new System.Threading.Timer(AutoScroll, null, 0, AutoScrollInterval);
         }
         if (EnableScrollToggle)
         {
@@ -189,6 +193,7 @@
             lastMouseY = e.ClientY;
         }
     }
+
 
     protected override void OnParametersSet()
     {

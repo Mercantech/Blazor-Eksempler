@@ -1,0 +1,172 @@
+@page "/opgaver/quiz/{id}"
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Quiz område (venstre side) -->
+        <div class="col-md-9">
+            @if (quiz == null)
+            {
+                <p>Indlæser quiz...</p>
+            }
+            else if (currentQuestionIndex >= quiz.Questions.Count)
+            {
+                <div class="text-center">
+                    <h2>Quiz afsluttet!</h2>
+                    <h3>Din endelige score: @($"{CalculateScore():F1}%")</h3>
+                    <button class="btn btn-primary mt-3" @onclick="RestartQuiz">Start forfra</button>
+                </div>
+            }
+            else
+            {
+                var question = quiz.Questions[currentQuestionIndex];
+                
+                <div class="text-center mb-4">
+                    <h1>@quiz.Topic</h1>
+                    <h4>Spørgsmål @(currentQuestionIndex + 1) af @quiz.Questions.Count</h4>
+                </div>
+
+                <div class="question-container text-center mb-5">
+                    <h2>@question.QuestionText</h2>
+                </div>
+
+                <div class="row">
+                    @for (int i = 0; i < question.Options.Count; i++)
+                    {
+                        var optionIndex = i;
+                        <div class="col-md-6 mb-3">
+                            <button class="btn btn-lg w-100 @GetOptionButtonClass(optionIndex)" 
+                                    style="height: 100px;"
+                                    @onclick="() => AnswerQuestion(optionIndex)"
+                                    disabled="@hasAnswered">
+                                @question.Options[i]
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Scoreboard (højre side) -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Scoreboard</h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <h4>Score: @($"{CalculateScore():F1}%")</h4>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" 
+                                 style="width: @($"{CalculateScore()}%")">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <p>Korrekte svar: @correctAnswers af @currentQuestionIndex</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+    private QuizDetail quiz;
+    private int currentQuestionIndex = 0;
+    private int correctAnswers = 0;
+    private bool hasAnswered = false;
+    private int? selectedAnswer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        quiz = await Http.GetFromJsonAsync<QuizDetail>($"https://opgaver.mercantec.tech/api/StudentQuiz/{Id}");
+    }
+
+    private async Task AnswerQuestion(int optionIndex)
+    {
+        if (hasAnswered) return;
+
+        hasAnswered = true;
+        selectedAnswer = optionIndex;
+
+        if (optionIndex == quiz.Questions[currentQuestionIndex].CorrectAnswerIndex)
+        {
+            correctAnswers++;
+        }
+
+        // Vent 2 sekunder så brugeren kan se resultatet
+        await Task.Delay(2000);
+
+        // Gå til næste spørgsmål
+        currentQuestionIndex++;
+        hasAnswered = false;
+        selectedAnswer = null;
+    }
+
+    private string GetOptionButtonClass(int optionIndex)
+    {
+        if (!hasAnswered)
+            return "btn-primary";
+
+        if (optionIndex == quiz.Questions[currentQuestionIndex].CorrectAnswerIndex)
+            return "btn-success";
+
+        if (optionIndex == selectedAnswer)
+            return "btn-danger";
+
+        return "btn-primary";
+    }
+
+    private double CalculateScore()
+    {
+        if (currentQuestionIndex == 0) return 0;
+        return ((double)correctAnswers / currentQuestionIndex) * 100;
+    }
+
+    private void RestartQuiz()
+    {
+        currentQuestionIndex = 0;
+        correctAnswers = 0;
+        hasAnswered = false;
+        selectedAnswer = null;
+    }
+
+    public class QuizDetail
+    {
+        public string Id { get; set; }
+        public string MadeBy { get; set; }
+        public string Topic { get; set; }
+        public List<Question> Questions { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public class Question
+    {
+        public string QuestionText { get; set; }
+        public List<string> Options { get; set; }
+        public int CorrectAnswerIndex { get; set; }
+    }
+}
+<style>
+    .btn-lg {
+        font-size: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-lg:hover {
+        transform: scale(1.02);
+    }
+
+    .question-container {
+        min-height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>

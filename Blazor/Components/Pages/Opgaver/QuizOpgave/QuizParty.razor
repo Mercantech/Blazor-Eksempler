@@ -1,0 +1,436 @@
+@page "/opgaver/quiz/party/{id}"
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@using System.Timers
+
+<div class="container-fluid mt-4">
+    @if (!hasJoined)
+    {
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h3>Deltag i Quiz Party</h3>
+                        <div class="mb-3">
+                            <label class="form-label">Dit navn</label>
+                            <input type="text" class="form-control" @bind="playerName" />
+                        </div>
+                        <button class="btn btn-primary" @onclick="JoinQuiz">Deltag</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <!-- Quiz område (venstre side) -->
+            <div class="col-md-8">
+                @if (quiz == null)
+                {
+                    <p>Indlæser quiz...</p>
+                }
+                else if (!quizStarted && isHost)
+                {
+                    <div class="text-center">
+                        <h2>Venter på deltagere...</h2>
+                        <button class="btn btn-primary mt-3" @onclick="StartQuiz">Start Quiz</button>
+                    </div>
+                }
+                else if (!quizStarted)
+                {
+                    <div class="text-center">
+                        <h2>Venter på at værten starter quizzen...</h2>
+                    </div>
+                }
+                else if (currentQuestionIndex >= quiz.Questions.Count)
+                {
+                    <div class="text-center">
+                        <h2>Quiz afsluttet!</h2>
+                        <h3>Din endelige score: @($"{CalculateScore():F1}%")</h3>
+                        <div class="mt-4">
+                            <h3>Endelig stilling:</h3>
+                            @foreach (var score in playerScores.OrderByDescending(s => s.Value))
+                            {
+                                <div class="h4">@score.Key: @score.Value point</div>
+                            }
+                        </div>
+                        <button class="btn btn-primary mt-3" @onclick="RestartQuiz">Start forfra</button>
+                    </div>
+                }
+                else
+                {
+                    var question = quiz.Questions[currentQuestionIndex];
+                    
+                    <div class="text-center mb-4">
+                        <h1>@quiz.Topic</h1>
+                        <h4>Spørgsmål @(currentQuestionIndex + 1) af @quiz.Questions.Count</h4>
+                    </div>
+
+                    <div class="question-container text-center mb-5">
+                        <h2>@question.QuestionText</h2>
+                    </div>
+
+                    <div class="row">
+                        @for (int i = 0; i < question.Options.Count; i++)
+                        {
+                            var optionIndex = i;
+                            <div class="col-md-6 mb-3">
+                                <button class="btn btn-lg w-100 @GetOptionButtonClass(optionIndex)" 
+                                        style="height: 100px;"
+                                        @onclick="() => AnswerQuestion(optionIndex)"
+                                        disabled="@hasAnswered">
+                                    @question.Options[i]
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Scoreboard</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center">
+                            <h4>Din score: @($"{CalculateScore():F1}%")</h4>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-success" 
+                                     style="width: @($"{CalculateScore()}%")">
+                                </div>
+                            </div>
+                        </div>
+                        @foreach (var player in playerScores.OrderByDescending(s => s.Value))
+                        {
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>
+                                    @GetPlayerDisplayName(player.Key)
+                                    @(player.Key == playerName ? " (Dig)" : "")
+                                </span>
+                                <span class="badge bg-primary">@player.Value point</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    @if (quizStarted && currentQuestionIndex < quiz?.Questions.Count)
+    {
+        <div class="progress mb-3">
+            <div class="progress-bar bg-warning" 
+                 style="width: @($"{(timeRemaining / QUESTION_TIME * 100):F0}%")">
+                @($"{timeRemaining:F0}s")
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+    private HubConnection? hubConnection;
+    private QuizDetail? quiz;
+    private string playerName = "";
+    private bool hasJoined = false;
+    private bool isHost = false;
+    private bool quizStarted = false;
+    private int currentQuestionIndex = 0;
+    private bool hasAnswered = false;
+    private Dictionary<string, int> playerScores = new();
+    private int? selectedAnswer;
+    private const double QUESTION_TIME = 10; // Ændret til 10 sekunder
+    private double timeRemaining = QUESTION_TIME;
+    private Timer timer;
+    private DateTime? currentQuestionStartTime;
+    private string hostName;
+    private HashSet<string> answeredPlayers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        quiz = await Http.GetFromJsonAsync<QuizDetail>($"https://opgaver.mercantec.tech/api/StudentQuiz/{Id}");
+        
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/quizhub"))
+            .Build();
+
+        timer = new Timer(100); // Opdater hver 100ms
+        timer.Elapsed += async (sender, e) => await TimerTick();
+
+        hubConnection.On<string>("PlayerJoined", async (name) =>
+        {
+            await InvokeAsync(() =>
+            {
+                if (!playerScores.ContainsKey(name))
+                {
+                    playerScores[name] = 0;
+                    StateHasChanged();
+                }
+            });
+        });
+
+        hubConnection.On<string, int, bool>("AnswerSubmitted", async (name, questionIdx, isCorrect) =>
+        {
+            await InvokeAsync(() =>
+            {
+                if (!playerScores.ContainsKey(name))
+                {
+                    playerScores[name] = 0;
+                }
+
+                if (isCorrect)
+                {
+                    playerScores[name]++;
+                }
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<DateTime>("QuizStarted", async (startTime) =>
+        {
+            await InvokeAsync(() =>
+            {
+                quizStarted = true;
+                currentQuestionStartTime = startTime;
+                timeRemaining = QUESTION_TIME;
+                timer.Start();
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<int, DateTime>("NextQuestion", async (questionIndex, startTime) =>
+        {
+            await InvokeAsync(() =>
+            {
+                currentQuestionIndex = questionIndex;
+                currentQuestionStartTime = startTime;
+                timeRemaining = QUESTION_TIME;
+                hasAnswered = false;
+                selectedAnswer = null;
+                answeredPlayers.Clear(); // Nulstil liste over svar
+                timer.Start();
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On("QuizRestarted", async () =>
+        {
+            await InvokeAsync(() =>
+            {
+                currentQuestionIndex = 0;
+                hasAnswered = false;
+                selectedAnswer = null;
+                foreach (var player in playerScores.Keys.ToList())
+                {
+                    playerScores[player] = 0;
+                }
+                quizStarted = true;
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<string>("PlayerAnswered", async (name) =>
+        {
+            await InvokeAsync(() =>
+            {
+                answeredPlayers.Add(name);
+                
+                // Hvis alle har svaret og vi er host, fremskyd tiden
+                if (isHost && answeredPlayers.Count == playerScores.Count)
+                {
+                    currentQuestionStartTime = DateTime.UtcNow.AddSeconds(-QUESTION_TIME + 1);
+                }
+                
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<List<string>, string>("ExistingPlayers", async (players, host) =>
+        {
+            await InvokeAsync(() =>
+            {
+                hostName = host;
+                foreach (var player in players)
+                {
+                    if (!playerScores.ContainsKey(player))
+                    {
+                        playerScores[player] = 0;
+                    }
+                }
+                StateHasChanged();
+            });
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task JoinQuiz()
+    {
+        if (string.IsNullOrWhiteSpace(playerName)) return;
+
+        hasJoined = true;
+        isHost = !playerScores.Any(); // Første spiller bliver vært
+        
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("JoinQuiz", Id, playerName);
+            playerScores[playerName] = 0;
+        }
+    }
+
+    private async Task StartQuiz()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("StartQuiz", Id);
+        }
+    }
+
+    private async Task TimerTick()
+    {
+        if (currentQuestionStartTime.HasValue)
+        {
+            var elapsed = (DateTime.UtcNow - currentQuestionStartTime.Value).TotalSeconds;
+            timeRemaining = Math.Max(0, QUESTION_TIME - elapsed);
+
+            if (timeRemaining <= 0)
+            {
+                timer.Stop();
+                await InvokeAsync(async () =>
+                {
+                    await HandleTimeUp();
+                    StateHasChanged();
+                });
+            }
+            else
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private async Task HandleTimeUp()
+    {
+        if (!hasAnswered && hubConnection is not null)
+        {
+            // Send et "ikke svaret" svar for spillere der ikke nåede at svare
+            await hubConnection.SendAsync("SubmitAnswer", Id, playerName, currentQuestionIndex, -1, false);
+        }
+
+        if (isHost)
+        {
+            await Task.Delay(2000); // Vis det korrekte svar i 2 sekunder
+            await hubConnection.SendAsync("ProgressToNextQuestion", Id, currentQuestionIndex + 1);
+        }
+    }
+
+    private async Task AnswerQuestion(int optionIndex)
+    {
+        if (hasAnswered) return;
+
+        hasAnswered = true;
+        selectedAnswer = optionIndex;
+        var isCorrect = optionIndex == quiz!.Questions[currentQuestionIndex].CorrectAnswerIndex;
+
+        if (hubConnection is not null)
+        {
+            // Informer andre spillere om svaret
+            await hubConnection.SendAsync("SubmitAnswer", Id, playerName, currentQuestionIndex, optionIndex, isCorrect);
+            await hubConnection.SendAsync("PlayerAnswered", Id, playerName);
+        }
+    }
+
+    private double CalculateScore()
+    {
+        if (currentQuestionIndex == 0) return 0;
+        return ((double)playerScores[playerName] / currentQuestionIndex) * 100;
+    }
+
+    private void RestartQuiz()
+    {
+        currentQuestionIndex = 0;
+        hasAnswered = false;
+        selectedAnswer = null;
+        
+        // Nulstil scores for alle spillere
+        foreach (var player in playerScores.Keys.ToList())
+        {
+            playerScores[player] = 0;
+        }
+        
+        if (hubConnection is not null && isHost)
+        {
+            _ = hubConnection.SendAsync("StartQuiz", Id);
+        }
+    }
+
+    private string GetOptionButtonClass(int optionIndex)
+    {
+        if (!hasAnswered)
+            return "btn-primary";
+
+        if (optionIndex == quiz!.Questions[currentQuestionIndex].CorrectAnswerIndex)
+            return "btn-success";
+
+        if (optionIndex == selectedAnswer)
+            return "btn-danger";
+
+        return "btn-primary";
+    }
+
+    private string GetPlayerDisplayName(string name)
+    {
+        if (name == hostName)
+            return $"{name} 👑"; // Tilføj krone til host
+        return name;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    public void Dispose()
+    {
+        timer?.Dispose();
+    }
+
+    public class QuizDetail
+    {
+        public string Id { get; set; }
+        public string MadeBy { get; set; }
+        public string Topic { get; set; }
+        public List<Question> Questions { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public class Question
+    {
+        public string QuestionText { get; set; }
+        public List<string> Options { get; set; }
+        public int CorrectAnswerIndex { get; set; }
+    }
+}
+
+<style>
+    /* ... existing styles ... */
+    
+    .progress {
+        height: 2rem;
+    }
+
+    .progress-bar {
+        font-size: 1.2rem;
+        font-weight: bold;
+        transition: width 0.1s linear;
+    }
+</style>

@@ -1,0 +1,96 @@
+@page "/opgaver/quiz"
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+    <div class="container">
+        <span class="navbar-brand">Quiz Administration</span>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#quizNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="quizNavbar">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/opgaver/quiz">Oversigt</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/opgaver/quiz/opret">Opret ny Quiz</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+@if (quizzes == null)
+{
+    <p>Indlæser...</p>
+}
+else
+{
+    <Grid TItem="Quiz"
+          Class="table table-hover table-bordered table-striped"
+          DataProvider="QuizDataProvider"
+          AllowFiltering="true"
+          AllowPaging="true"
+          PageSize="15"
+          AllowSorting="true"
+          AllowSelection="true"
+          SelectionMode="GridSelectionMode.Multiple"
+          SelectedItemsChanged="OnSelectedItemsChanged"
+          Responsive="true">
+
+        <GridColumns>
+            <GridColumn TItem="Quiz" HeaderText="Emne" PropertyName="Topic" SortKeySelector="item => item.Topic">
+                @context.Topic
+            </GridColumn>
+            <GridColumn TItem="Quiz" HeaderText="Lavet af" PropertyName="MadeBy" SortKeySelector="item => item.MadeBy">
+                @context.MadeBy
+            </GridColumn>
+            <GridColumn TItem="Quiz" HeaderText="Antal spørgsmål" PropertyName="NumberOfQuestions" SortKeySelector="item => item.NumberOfQuestions">
+                @context.NumberOfQuestions
+            </GridColumn>
+            <GridColumn TItem="Quiz" HeaderText="Oprettet" PropertyName="CreatedAt" SortKeySelector="item => item.CreatedAt">
+                @context.CreatedAt.ToString("dd-MM-yyyy")
+            </GridColumn>
+            <GridColumn TItem="Quiz" HeaderText="Handling">
+                <a href="/opgaver/quiz/@context.Id" class="btn btn-primary">🐺 </a>
+                <a href="/opgaver/quiz/party/@context.Id" class="btn btn-primary">🥳</a>
+            </GridColumn>
+        </GridColumns>
+    </Grid>
+
+    
+}
+
+@code {
+    private IEnumerable<Quiz>? quizzes;
+    private HashSet<Quiz> selectedQuizzes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        quizzes = await Http.GetFromJsonAsync<List<Quiz>>("https://opgaver.mercantec.tech/api/StudentQuiz");
+    }
+
+    private async Task<GridDataProviderResult<Quiz>> QuizDataProvider(GridDataProviderRequest<Quiz> request)
+    {
+        if (quizzes is null)
+            quizzes = await Http.GetFromJsonAsync<List<Quiz>>("https://opgaver.mercantec.tech/api/StudentQuiz");
+
+        return await Task.FromResult(request.ApplyTo(quizzes));
+    }
+
+    private Task OnSelectedItemsChanged(HashSet<Quiz> quizzes)
+    {
+        selectedQuizzes = quizzes is not null && quizzes.Any() ? quizzes : new();
+        return Task.CompletedTask;
+    }
+
+    public class Quiz
+    {
+        public string Id { get; set; }
+        public string MadeBy { get; set; }
+        public string Topic { get; set; }
+        public int NumberOfQuestions { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+}

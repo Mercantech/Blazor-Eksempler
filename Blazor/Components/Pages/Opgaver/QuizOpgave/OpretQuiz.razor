@@ -1,0 +1,135 @@
+@page "/opgaver/quiz/opret"
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<div class="container mt-4">
+    <h1>Opret ny Quiz</h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Lavet af</label>
+                <input type="text" class="form-control" @bind="quiz.MadeBy" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Emne</label>
+                <input type="text" class="form-control" @bind="quiz.Topic" />
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <button class="btn btn-success" @onclick="AddQuestion">
+            <i class="fas fa-plus"></i> Tilføj spørgsmål
+        </button>
+    </div>
+
+    @foreach (var question in quiz.Questions)
+    {
+        var index = quiz.Questions.IndexOf(question);
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Spørgsmål @(index + 1)</h5>
+                <button class="btn btn-danger" @onclick="() => RemoveQuestion(index)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Spørgsmålstekst</label>
+                    <input type="text" class="form-control" @bind="question.QuestionText" />
+                </div>
+
+                @for (int i = 0; i < 4; i++)
+                {
+                    var optionIndex = i;
+                    <div class="mb-2">
+                        <div class="input-group">
+                            <div class="input-group-text">
+                                <input type="radio" 
+                                       name="correct_@index" 
+                                       checked="@(question.CorrectAnswerIndex == optionIndex)"
+                                       @onchange="() => SetCorrectAnswer(index, optionIndex)" />
+                            </div>
+                            <input type="text" 
+                                   class="form-control" 
+                                   placeholder="Svarmulighed @(optionIndex + 1)"
+                                   @bind="question.Options[optionIndex]" />
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (quiz.Questions.Any())
+    {
+        <button class="btn btn-primary" @onclick="SaveQuiz">Gem Quiz</button>
+    }
+</div>
+
+@code {
+    private QuizCreate quiz = new()
+    {
+        MadeBy = "",
+        Topic = "",
+        Questions = new List<QuestionCreate>()
+    };
+
+    private void AddQuestion()
+    {
+        quiz.Questions.Add(new QuestionCreate
+        {
+            QuestionText = "",
+            Options = new List<string> { "", "", "", "" },
+            CorrectAnswerIndex = 0
+        });
+    }
+
+    private void RemoveQuestion(int index)
+    {
+        quiz.Questions.RemoveAt(index);
+    }
+
+    private void SetCorrectAnswer(int questionIndex, int optionIndex)
+    {
+        quiz.Questions[questionIndex].CorrectAnswerIndex = optionIndex;
+    }
+
+    private async Task SaveQuiz()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("https://opgaver.mercantec.tech/api/StudentQuiz", quiz);
+            if (response.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo("opgaver/quiz");
+            }
+            else
+            {
+                // Håndter fejl
+                Console.WriteLine($"Fejl: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fejl: {ex.Message}");
+        }
+    }
+
+    private class QuizCreate
+    {
+        public string MadeBy { get; set; }
+        public string Topic { get; set; }
+        public List<QuestionCreate> Questions { get; set; }
+    }
+
+    private class QuestionCreate
+    {
+        public string QuestionText { get; set; }
+        public List<string> Options { get; set; }
+        public int CorrectAnswerIndex { get; set; }
+    }
+}

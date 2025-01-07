@@ -42,13 +42,14 @@ namespace Blazor
 
             var app = builder.Build();
             app.MapHub<ChatHub>("/chathub");
+            app.MapHub<QuizHub>("/quizhub");
 
             //GeoBlazor
             var provider = new FileExtensionContentTypeProvider();
             provider.Mappings[".wsv"] = "application/octet-stream";
-            #if RELEASE
+#if RELEASE
             provider.Mappings.Remove(".map");
-            #endif
+#endif
             app.UseStaticFiles(new StaticFileOptions
             {
                 ContentTypeProvider = provider
