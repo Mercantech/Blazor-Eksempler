@@ -1,0 +1,325 @@
+@page "/opgaver/geoguessr"
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <h3 class="mb-4 text-center">Blazor Geoguessr</h3>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loader data...</span>
+            </div>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="alert alert-warning shadow-sm">
+            @errorMessage
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-lg-9 col-md-12 mb-4">
+                <div class="card shadow">
+                    <div class="card-body p-0">
+                        <div class="ratio ratio-16x9">
+                            <iframe 
+                                src="@mapillaryUrl" 
+                                frameborder="0"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                </div>
+           </div>
+            
+            <div class="col-lg-3 col-md-12">
+                @if (!hasGuessed)
+                {
+                    <div class="card shadow mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">Gæt landet</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="input-group">
+                                <select class="form-select" @bind="userGuess">
+                                    <option value="">Vælg et land...</option>
+                                    @if (allCountries != null)
+                                    {
+                                        @foreach (var country in allCountries.OrderBy(c => c.Name.Common))
+                                        {
+                                            <option value="@country.Name.Common">@country.Name.Common</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <button class="btn btn-primary w-100 mt-2" @onclick="CheckGuess">Gæt!</button>
+                        </div>
+                    </div>
+                }
+                
+                @if (guessResult != null)
+                {
+                    <div class="alert @(isCorrectGuess ? "alert-success" : "alert-danger") mb-3">
+                        @guessResult
+                    </div>
+                }
+                
+                @if (hasGuessed && currentCountry != null)
+                {
+                    <div class="card shadow">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">Landeinfo</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2">@currentCountry.Name.Common</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="bi bi-building"></i>
+                                    <strong>Hovedstad:</strong> @(string.Join(", ", currentCountry.Capital))
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-globe"></i>
+                                    <strong>Region:</strong> @currentCountry.Region
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-people"></i>
+                                    <strong>Befolkning:</strong> @currentCountry.Population.ToString("N0")
+                                </li>
+                            </ul>
+                            <button class="btn btn-primary w-100" @onclick="NewGame">Nyt Spil</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Historik</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Runde</th>
+                                    <th>Land</th>
+                                    <th>Dit gæt</th>
+                                    <th>Resultat</th>
+                                    <th>Mapillary Link</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var entry in guessHistory.OrderByDescending(h => h.Key))
+                                {
+                                    <tr class="@(entry.Value.IsCorrect ? "table-success" : "table-danger")">
+                                        <td>@entry.Key</td>
+                                        <td>@entry.Value.CorrectCountry</td>
+                                        <td>@entry.Value.UserGuess</td>
+                                        <td>
+                                            @if (entry.Value.IsCorrect)
+                                            {
+                                                <i class="bi bi-check-circle-fill text-success"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-x-circle-fill text-danger"></i>
+                                            }
+                                        </td>
+                                        <td>
+                                            <a href="@entry.Value.MapillaryUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-map"></i> Vis billede
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 10px;
+        border: none;
+    }
+
+    .card-header {
+        border-radius: 10px 10px 0 0 !important;
+    }
+
+    .ratio-16x9 {
+        min-height: 75vh;
+    }
+
+    .bi {
+        margin-right: 8px;
+    }
+
+    .table-responsive {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .bi-check-circle-fill {
+        font-size: 1.2rem;
+    }
+
+    .bi-x-circle-fill {
+        font-size: 1.2rem;
+    }
+</style>
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string mapillaryUrl = "";
+    private CountryDto? currentCountry;
+    private string userGuess = "";
+    private string? guessResult;
+    private bool hasGuessed = false;
+    private bool isCorrectGuess = false;
+    private List<CountryDto> allCountries;
+    private List<CountryDto> usedCountries = new List<CountryDto>();
+    private List<CountryDto> availableCountries = new List<CountryDto>();
+    private Dictionary<int, GuessHistoryEntry> guessHistory = new();
+    private int currentRound = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            allCountries = await Http.GetFromJsonAsync<List<CountryDto>>("https://opgaver.mercantec.tech/api/Countries/with-mapillary");
+            await LoadNewLocation();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Der opstod en fejl ved indlæsning af lande: {ex.Message}";
+        }
+    }
+
+    private async Task LoadNewLocation()
+    {
+        try
+        {
+            isLoading = true;
+            
+            // Hvis alle lande er brugt, nulstil listen
+            if (!availableCountries.Any())
+            {
+                availableCountries = await Http.GetFromJsonAsync<List<CountryDto>>("https://opgaver.mercantec.tech/api/Countries/with-mapillary");
+                usedCountries.Clear();
+                
+                if (availableCountries == null || !availableCountries.Any())
+                {
+                    errorMessage = "Ingen lande med Mapillary billeder fundet.";
+                    return;
+                }
+            }
+
+            // Vælg et tilfældigt land fra de tilgængelige lande
+            var random = new Random();
+            var index = random.Next(availableCountries.Count);
+            currentCountry = availableCountries[index];
+            
+            // Flyt landet fra available til used
+            availableCountries.RemoveAt(index);
+            usedCountries.Add(currentCountry);
+            
+            if (currentCountry?.Maps?.Mapillary != null && currentCountry.Maps.Mapillary.Length > 0)
+            {
+                mapillaryUrl = $"https://www.mapillary.com/embed?image_key={currentCountry.Maps.Mapillary[0]}&style=photo";
+            }
+            else
+            {
+                errorMessage = "Ingen Mapillary billeder tilgængelige.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Der opstod en fejl: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void CheckGuess()
+    {
+        if (string.IsNullOrWhiteSpace(userGuess))
+            return;
+
+        currentRound++;
+        isCorrectGuess = userGuess.Trim().Equals(currentCountry?.Name.Common, StringComparison.OrdinalIgnoreCase);
+        hasGuessed = true;
+        
+        guessResult = isCorrectGuess 
+            ? "Korrekt! Du gættede rigtigt!" 
+            : $"Desværre, det rigtige svar var {currentCountry?.Name.Common}";
+
+        // Gem gættet i historikken
+        guessHistory[currentRound] = new GuessHistoryEntry
+        {
+            CorrectCountry = currentCountry?.Name.Common,
+            UserGuess = userGuess,
+            IsCorrect = isCorrectGuess,
+            MapillaryUrl = mapillaryUrl
+        };
+    }
+
+    private async Task NewGame()
+    {
+        userGuess = "";
+        guessResult = null;
+        hasGuessed = false;
+        isCorrectGuess = false;
+        await LoadNewLocation();
+    }
+
+    private class CountryDto
+    {
+        public string Id { get; set; }
+        public Name Name { get; set; }
+        public string[] Capital { get; set; }
+        public string Region { get; set; }
+        public int Population { get; set; }
+        public Maps Maps { get; set; }
+    }
+
+    private class Name
+    {
+        public string Common { get; set; }
+        public string Official { get; set; }
+    }
+
+    private class Maps
+    {
+        public string GoogleMaps { get; set; }
+        public string OpenStreetMaps { get; set; }
+        public string[] Mapillary { get; set; }
+    }
+
+    private class GuessHistoryEntry
+    {
+        public string CorrectCountry { get; set; }
+        public string UserGuess { get; set; }
+        public bool IsCorrect { get; set; }
+        public string MapillaryUrl { get; set; }
+    }
+}
