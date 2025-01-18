@@ -2,24 +2,47 @@
 
 <PageTitle> Binær Kodeomformer </PageTitle>
 
-<h1>IP Address Converter | Binær Kodeomformer | Opgaven findes på  <a href="https://mercantec.notion.site/Bin-r-Kodeomformer-45731045d4094c7fb0df703800c6b962?pvs=4"> Notion</a> </h1>
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h1 class="h3">IP Address Converter | Binær Kodeomformer</h1>
+            <p class="mb-0">Opgaven findes på <a href="https://mercantec.notion.site/Bin-r-Kodeomformer-45731045d4094c7fb0df703800c6b962?pvs=4" class="btn btn-link">Notion</a></p>
+        </div>
 
-<h3> IP => Binær </h3>
-<p>Enter an IP address:</p>
-<input type="number" @bind="@Octet1" max="256" min="0" />
-<input type="number" @bind="@Octet2" max="256" min="0" />
-<input type="number" @bind="@Octet3" max="256" min="0" />
-<input type="number" @bind="@Octet4" max="256" min="0" />
-<br />
-<br />
-<p>Binary representation: @BinaryIpAddress</p>
-<br />
-<br />
-<h3> Binær => IP </h3>
-<input type="string" size="32" @oninput="ValidateBinaryInput" @bind="@BinaryToIpAddress" />
+        <div class="card-body">
+            <!-- IP til Binær sektion -->
+            <div class="mb-4">
+                <h3 class="h4 mb-3">IP => Binær</h3>
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" @bind="@Octet1" max="256" min="0" />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" @bind="@Octet2" max="256" min="0" />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" @bind="@Octet3" max="256" min="0" />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" @bind="@Octet4" max="256" min="0" />
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <p class="fw-bold">Binær repræsentation:</p>
+                    <div class="alert alert-info">@BinaryIpAddress</div>
+                </div>
+            </div>
 
-<p> Ip Address: @IpAddressFromBinary </p>
-
+            <!-- Binær til IP sektion -->
+            <div>
+                <h3 class="h4 mb-3">Binær => IP</h3>
+                <input type="string" class="form-control mb-3" @oninput="ValidateBinaryInput" @bind="@BinaryToIpAddress" />
+                <p class="fw-bold">IP Adresse:</p>
+                <div class="alert alert-success">@IpAddressFromBinary</div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
     public int Octet1 = 127;

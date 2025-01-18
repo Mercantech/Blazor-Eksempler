@@ -1,0 +1,239 @@
+@page "/opgaver/lol-overview"
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<h3>League of Legends Champions</h3>
+
+<div class="champion-grid">
+    @if (champions != null)
+    {
+        @foreach (var champion in champions.OrderBy(c => c.Name))
+        {
+            <div class="champion-card" @onclick="() => ToggleDetails(champion)">
+                <div class="champion-image-container">
+                    <img src="@champion.ImgUrl" alt="@champion.Name" />
+                    @if (champion.ShowDetails)
+                    {
+                        <div class="champion-details-overlay">
+                            <div class="champion-details">
+                                <p><strong>Klasser:</strong> @champion.GetClassTypes()</p>
+                                <p><strong>Udgivet:</strong> @champion.ReleaseDate.ToString("dd/MM/yyyy")</p>
+                                <p><strong>Ressource:</strong> @champion.Resource</p>
+                                <p><strong>Angrebstype:</strong> @champion.RangeType</p>
+                                <p><strong>Oprindelse:</strong> @champion.Origin</p>
+                                <p><strong>Region:</strong> @champion.Region</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="champion-info">
+                    <img class="champion-icon" 
+                         src="@GetChampionIconUrl(champion.Name)"
+                         alt="@champion.Name icon" />
+                    <div class="champion-text">
+                        <h4>@champion.Name</h4>
+                        <p>@champion.Title</p>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <p>Indlæser champions...</p>
+    }
+</div>
+
+<style>
+    .champion-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        padding: 1rem;
+        max-width: 1800px;
+        margin: 0 auto;
+    }
+
+    .champion-card {
+        width: 100%;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+
+    .champion-card:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .champion-card img {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+    }
+
+    .champion-card h4, .champion-card p {
+        margin: 0.5rem;
+        text-align: center;
+    }
+
+    .details-button {
+        background: none;
+        border: none;
+        color: #007bff;
+        cursor: pointer;
+        padding: 0.5rem;
+        width: auto;
+        margin: 0 auto;
+        display: block;
+        transition: color 0.2s;
+    }
+
+    .details-button:hover {
+        color: #0056b3;
+    }
+
+    .champion-details p {
+        margin: 0.8rem 0;
+        text-align: left;
+        color: white;
+    }
+
+    .champion-card h4, .champion-card > p {
+        margin: 0.5rem;
+        text-align: center;
+    }
+
+    .champion-image-container {
+        position: relative;
+        width: 100%;
+        height: 300px;
+    }
+
+    .champion-image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .champion-details-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 1rem;
+        overflow-y: auto;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @@keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@media (max-width: 1400px) {
+        .champion-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 900px) {
+        .champion-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .champion-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin: 0.5rem auto;
+        display: block;
+    }
+
+    .champion-info {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        background-color: rgba(0, 0, 0, 0.05);
+        margin: 0.5rem;
+        border-radius: 8px;
+    }
+
+    .champion-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 1rem;
+        border: 2px solid #ccc;
+    }
+
+    .champion-text {
+        flex: 1;
+    }
+
+    .champion-text h4 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .champion-text p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #666;
+    }
+</style>
+
+@code {
+    private Champion[]? champions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        champions = await Http.GetFromJsonAsync<Champion[]>("https://opgaver.mercantec.tech/LeagueOfLegends");
+    }
+
+    private void ToggleDetails(Champion champion)
+    {
+        champion.ShowDetails = !champion.ShowDetails;
+    }
+
+    private class Champion
+    {
+        public string? Name { get; set; }
+        public string? Title { get; set; }
+        public List<string>? Classes { get; set; }
+        public DateTime ReleaseDate { get; set; }
+        public string? ImgUrl { get; set; }
+        public string? Resource { get; set; }
+        public string? RangeType { get; set; }
+        public string? Origin { get; set; }
+        public string? Region { get; set; }
+        public bool ShowDetails { get; set; }
+
+        public string GetClassTypes()
+        {
+            return Classes != null ? string.Join(", ", Classes) : string.Empty;
+        }
+    }
+
+    private string GetChampionIconUrl(string championName)
+    {
+        string baseUrl = "https://r2opgaver.mercantec.tech/LOL/Champs/Icon";
+        // If the name has a space, replace it with a underscore
+        championName = championName.Replace(" ", "_");
+        return $"{baseUrl}/{championName}Square.png";
+    }
+
+}
