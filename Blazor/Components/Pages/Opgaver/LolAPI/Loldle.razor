@@ -1,0 +1,216 @@
+@page "/opgaver/lol/loldle"
+@inject HttpClient Http
+
+<div class="loldle-container">
+    <h3>Loldle</h3>
+    
+    <div class="guess-section">
+        <DropDownChamps 
+            OnChampionSelected="HandleGuess"
+            ShowSelected="false"
+            ExcludeSelected="true"
+            ShowIcon="true"
+            ShowTitle="false" />
+    </div>
+
+    @if (guesses.Any())
+    {
+        <div class="guesses-container">
+            <div class="guess-header">
+                <div class="guess-cell">Champion</div>
+                <div class="guess-cell">Klasser</div>
+                <div class="guess-cell">Udgivelsesår</div>
+                <div class="guess-cell">Ressource</div>
+                <div class="guess-cell">Angrebstype</div>
+                <div class="guess-cell">Region</div>
+            </div>
+            @foreach (var guess in guesses)
+            {
+                <div class="guess-row">
+                    <div class="guess-cell">
+                        <img src="@GetChampionIconUrl(guess.Name)" alt="@guess.Name" class="champion-icon" />
+                        @guess.Name
+                    </div>
+                    <div class="guess-cell @GetMatchClass(guess.Classes, targetChampion?.Classes)">
+                        @guess.GetClassTypes()
+                    </div>
+                    <div class="guess-cell @GetYearMatchClass(guess.ReleaseDate, targetChampion?.ReleaseDate)">
+                        @guess.ReleaseDate.Year
+                        @GetYearIndicator(guess.ReleaseDate, targetChampion?.ReleaseDate)
+                    </div>
+                    <div class="guess-cell @GetMatchClass(guess.Resource, targetChampion?.Resource)">
+                        @guess.Resource
+                    </div>
+                    <div class="guess-cell @GetMatchClass(guess.RangeType, targetChampion?.RangeType)">
+                        @guess.RangeType
+                    </div>
+                    <div class="guess-cell @GetMatchClass(guess.Region, targetChampion?.Region)">
+                        @guess.Region
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (hasWon)
+    {
+        <div class="win-message">
+            <h4>Tillykke! Du gættede rigtigt på @guesses.Count forsøg!</h4>
+            <button class="new-game-button" @onclick="StartNewGame">Start nyt spil</button>
+        </div>
+    }
+</div>
+
+<style>
+    .loldle-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+
+    .guesses-container {
+        margin-top: 2rem;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .guess-header, .guess-row {
+        display: grid;
+        grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1fr;
+        gap: 4px;
+    }
+
+    .guess-header {
+        background-color: #f8f9fa;
+        font-weight: bold;
+        padding: 0.5rem;
+    }
+
+    .guess-row {
+        border-top: 1px solid #eee;
+        padding: 0.5rem;
+    }
+
+    .guess-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    .champion-icon {
+        width: 30px;
+        height: 30px;
+        border: 2px solid #ccc;
+    }
+
+    .match-correct {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .match-partial {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .match-wrong {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .win-message {
+        margin-top: 2rem;
+        text-align: center;
+        padding: 2rem;
+        background-color: #d4edda;
+        border-radius: 8px;
+    }
+
+    .new-game-button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 1rem;
+    }
+
+    .new-game-button:hover {
+        background-color: #218838;
+    }
+</style>
+
+@code {
+    private Champion? targetChampion;
+    private List<Champion> guesses = new();
+    private bool hasWon = false;
+    private Champion[]? allChampions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        allChampions = await Http.GetFromJsonAsync<Champion[]>("https://opgaver.mercantec.tech/LeagueOfLegends");
+        await StartNewGame();
+    }
+
+    private async Task StartNewGame()
+    {
+        if (allChampions != null && allChampions.Length > 0)
+        {
+            Random random = new Random();
+            targetChampion = allChampions[random.Next(allChampions.Length)];
+            guesses.Clear();
+            hasWon = false;
+        }
+    }
+
+    private void HandleGuess(Champion guessedChampion)
+    {
+        guesses.Insert(0, guessedChampion); // Nyeste gæt øverst
+        
+        if (guessedChampion.Name == targetChampion?.Name)
+        {
+            hasWon = true;
+        }
+    }
+
+    private string GetMatchClass(string? value1, string? value2)
+    {
+        if (value1 == value2) return "match-correct";
+        return "match-wrong";
+    }
+
+    private string GetMatchClass(List<string>? list1, List<string>? list2)
+    {
+        if (list1 == null || list2 == null) return "match-wrong";
+        
+        var commonElements = list1.Intersect(list2).Count();
+        if (commonElements == list1.Count && commonElements == list2.Count)
+            return "match-correct";
+        if (commonElements > 0)
+            return "match-partial";
+        return "match-wrong";
+    }
+
+    private string GetYearMatchClass(DateTime date1, DateTime? date2)
+    {
+        if (date2 == null) return "match-wrong";
+        return date1.Year == date2.Value.Year ? "match-correct" : "match-wrong";
+    }
+
+    private string GetYearIndicator(DateTime guessDate, DateTime? targetDate)
+    {
+        if (targetDate == null || guessDate.Year == targetDate.Value.Year) return "";
+        return guessDate.Year < targetDate.Value.Year ? "↑" : "↓";
+    }
+
+    private string GetChampionIconUrl(string championName)
+    {
+        string baseUrl = "https://r2opgaver.mercantec.tech/LOL/Champs/Icon";
+        championName = championName.Replace(" ", "_");
+        return $"{baseUrl}/{championName}Square.png";
+    }
+}
+

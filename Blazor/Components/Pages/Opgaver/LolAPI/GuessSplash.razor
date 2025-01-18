@@ -1,0 +1,150 @@
+@page "/opgaver/lol/guess-splash"
+@inject HttpClient Http
+
+<div class="guess-container">
+    <h3>Gæt Champion'en!</h3>
+    
+    @if (currentChampion != null)
+    {
+        <div class="splash-container">
+            <img src="@currentChampion.ImgUrl" alt="Mysterie champion" />
+        </div>
+
+        <div class="guess-section">
+            <DropDownChamps 
+                OnChampionSelected="HandleGuess"
+                ShowSelected="false"
+                ExcludeSelected="true"
+                ShowIcon="false"
+                ShowTitle="false" />
+            
+            @if (hasGuessed)
+            {
+                <div class="@(isCorrect ? "correct-guess" : "wrong-guess")">
+                    <h4>@(isCorrect ? "Korrekt!" : "Forkert!")</h4>
+                    @if (!isCorrect)
+                    {
+                        <p>Det var @currentChampion.Name</p>
+                    }
+                    <button class="next-button" @onclick="LoadNewChampion">Næste Champion</button>
+                </div>
+            }
+        </div>
+
+        <div class="score">
+            <p>Score: @correctGuesses / @totalGuesses</p>
+        </div>
+    }
+</div>
+
+<style>
+    .guess-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+
+    .splash-container {
+        width: 100%;
+        position: relative;
+        padding-top: 56.25%; 
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .splash-container img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .guess-section {
+        margin: 2rem 0;
+    }
+
+    .correct-guess {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    .wrong-guess {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    .next-button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 1rem;
+    }
+
+    .next-button:hover {
+        background-color: #0056b3;
+    }
+
+    .score {
+        text-align: center;
+        font-size: 1.2rem;
+        margin-top: 2rem;
+    }
+</style>
+
+@code {
+    private Champion? currentChampion;
+    private bool hasGuessed = false;
+    private bool isCorrect = false;
+    private int correctGuesses = 0;
+    private int totalGuesses = 0;
+    private Champion[]? allChampions;
+    private Random random = new Random();
+
+    protected override async Task OnInitializedAsync()
+    {
+        allChampions = await Http.GetFromJsonAsync<Champion[]>("https://opgaver.mercantec.tech/LeagueOfLegends");
+        await LoadNewChampion();
+    }
+
+    private async Task LoadNewChampion()
+    {
+        if (allChampions != null && allChampions.Length > 0)
+        {
+            currentChampion = allChampions[random.Next(allChampions.Length)];
+            hasGuessed = false;
+            isCorrect = false;
+        }
+    }
+
+    private void HandleGuess(Champion guessedChampion)
+    {
+        hasGuessed = true;
+        totalGuesses++;
+        
+        if (currentChampion != null && guessedChampion.Name == currentChampion.Name)
+        {
+            isCorrect = true;
+            correctGuesses++;
+        }
+        else
+        {
+            isCorrect = false;
+        }
+    }
+}
+
+

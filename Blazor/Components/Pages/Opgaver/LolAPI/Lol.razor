@@ -1,0 +1,131 @@
+@page "/opgaver/lol"
+
+<div class="lol-container">
+    <h1>League of Legends API Projekter</h1>
+    <p class="intro-text">Udforsk forskellige League of Legends relaterede minispil og værktøjer.</p>
+
+    <div class="projects-grid">
+        <div class="project-card">
+            <h2>Champion Overview</h2>
+            <p>En komplet oversigt over alle League of Legends champions. Se detaljeret information om hver champion, 
+                inklusiv deres klasser, udgivelsesdato, ressourcer og oprindelsesregion.</p>
+            <div class="features-list">
+                <span class="feature">✓ Detaljeret champion information</span>
+                <span class="feature">✓ Søgefunktion</span>
+                <span class="feature">✓ Filtreringsmuligheder</span>
+            </div>
+            <a href="/opgaver/lol/overview" class="project-link">Gå til Overview</a>
+        </div>
+
+        <div class="project-card">
+            <h2>Guess the Splash</h2>
+            <p>Test din League of Legends viden ved at gætte champions baseret på deres splash art! 
+                Et sjovt spil der udfordrer din evne til at genkende champions fra deres artwork.</p>
+            <div class="features-list">
+                <span class="feature">✓ Tilfældige splash arts</span>
+                <span class="feature">✓ Point system</span>
+                <span class="feature">✓ Øjeblikkelig feedback</span>
+            </div>
+            <a href="/opgaver/lol/guess-splash" class="project-link">Prøv Guess the Splash</a>
+        </div>
+
+        <div class="project-card">
+            <h2>Loldle</h2>
+            <p>En Wordle-inspireret League of Legends gættespil! Gæt den hemmelige champion baseret på hints 
+                om deres egenskaber, klasser og oprindelsesregion.</p>
+            <div class="features-list">
+                <span class="feature">✓ Detaljerede hints</span>
+                <span class="feature">✓ Farvekodet feedback</span>
+                <span class="feature">✓ Ubegrænset antal gæt</span>
+            </div>
+            <a href="/opgaver/lol/loldle" class="project-link">Spil Loldle</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .lol-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .intro-text {
+        font-size: 1.2rem;
+        color: #666;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .project-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .project-card h2 {
+        color: #1a1a1a;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .project-card p {
+        color: #666;
+        margin-bottom: 1.5rem;
+        flex-grow: 1;
+    }
+
+    .features-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .feature {
+        color: #2c5282;
+        font-size: 0.9rem;
+    }
+
+    .project-link {
+        display: inline-block;
+        background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border-radius: 6px;
+        text-decoration: none;
+        text-align: center;
+        transition: background 0.3s;
+    }
+
+    .project-link:hover {
+        background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+    }
+
+    @@media (max-width: 768px) {
+        .projects-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .lol-container {
+            padding: 1rem;
+        }
+    }
+</style>
+

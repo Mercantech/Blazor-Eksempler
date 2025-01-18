@@ -9,7 +9,7 @@
             @bind-value="SearchText"
             @bind-value:event="oninput"
             @onfocusin="ShowResults"
-            @onkeyup="FilterChampions" />
+            @onkeyup="HandleKeyPress" />
         
         @if (IsSearching && FilteredChampions.Any())
         {
@@ -17,7 +17,10 @@
                 @foreach (var champion in FilteredChampions.Take(5))
                 {
                     <div class="dd-search-result-item" @onclick="() => SelectChampion(champion)">
-                        <img src="@GetChampionIconUrl(champion.Name)" alt="@champion.Name" class="dd-champion-icon" />
+                        @if (ShowIcon)
+                        {
+                            <img src="@GetChampionIconUrl(champion.Name)" alt="@champion.Name" class="dd-champion-icon" />
+                        }
                         <div class="dd-champion-info">
                             <span class="dd-champion-name">@champion.Name</span>
                             @if (ShowTitle)
@@ -34,7 +37,10 @@
     @if (ShowSelected && SelectedChampion != null)
     {
         <div class="dd-selected-champion">
-            <img src="@GetChampionIconUrl(SelectedChampion.Name)" alt="@SelectedChampion.Name" class="dd-champion-icon" />
+            @if (ShowIcon)
+            {
+                <img src="@GetChampionIconUrl(SelectedChampion.Name)" alt="@SelectedChampion.Name" class="dd-champion-icon" />
+            }
             <div class="dd-champion-info">
                 <span class="dd-champion-name">@SelectedChampion.Name</span>
                 @if (ShowTitle)
@@ -147,6 +153,9 @@
     public bool ExcludeSelected { get; set; } = true;
 
     [Parameter]
+    public bool ShowIcon { get; set; } = true;
+
+    [Parameter]
     public bool ShowTitle { get; set; } = true;
 
     private Champion[]? champions;
@@ -207,5 +216,17 @@
         string baseUrl = "https://r2opgaver.mercantec.tech/LOL/Champs/Icon";
         championName = championName.Replace(" ", "_");
         return $"{baseUrl}/{championName}Square.png";
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && FilteredChampions.Any())
+        {
+            await SelectChampion(FilteredChampions.First());
+        }
+        else
+        {
+            FilterChampions();
+        }
     }
 }

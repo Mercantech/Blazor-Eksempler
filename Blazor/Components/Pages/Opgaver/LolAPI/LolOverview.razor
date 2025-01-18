@@ -1,4 +1,4 @@
-@page "/opgaver/lol-overview"
+@page "/opgaver/lol/overview"
 @using System.Net.Http.Json
 @inject HttpClient Http
 
@@ -8,6 +8,7 @@
     OnChampionSelected="HandleChampionSelected" 
     ShowSelected="false"
     ExcludeSelected="false"
+    ShowIcon="true"
     ShowTitle="true" />
 
 @if (selectedChampion != null)
