@@ -4,7 +4,11 @@ using Microsoft.AspNetCore.StaticFiles;
 using Blazor.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-//using Blazor.Areas.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Blazor.Services;
+
 
 namespace Blazor
 {
@@ -38,7 +42,9 @@ namespace Blazor
                 .AddInteractiveServerComponents();
             builder.Services.AddSignalR();
 
+            builder.Services.AddScoped<APIService>();
             builder.Services.AddHttpClient();
+            builder.Services.AddScoped<AuthService>();
 
             var app = builder.Build();
             app.MapHub<ChatHub>("/chathub");
@@ -48,7 +54,7 @@ namespace Blazor
             var provider = new FileExtensionContentTypeProvider();
             provider.Mappings[".wsv"] = "application/octet-stream";
 #if RELEASE
-            provider.Mappings.Remove(".map");
+                        provider.Mappings.Remove(".map");
 #endif
             app.UseStaticFiles(new StaticFileOptions
             {

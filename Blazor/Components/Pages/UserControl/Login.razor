@@ -4,6 +4,9 @@
 @inject SignInManager<IdentityUser> SignInManager
 @inject UserManager<IdentityUser> UserManager
 @inject NavigationManager NavigationManager
+@inject APIService ApiService
+@inject AuthService AuthService
+@inject IJSRuntime JSRuntime
 
 <div class="auth-container">
     <div class="auth-card">
@@ -48,25 +51,15 @@
     {
         try
         {
-            await Task.Delay(1000);
-            
-            var user = await UserManager.FindByEmailAsync(loginModel.Email);
-            if (user == null)
+            var loginRequest = new LoginRequest
             {
-                errorMessage = "Ugyldig email eller password";
-                return;
-            }
+                Email = loginModel.Email,
+                Password = loginModel.Password
+            };
 
-            var result = await SignInManager.CheckPasswordSignInAsync(user, loginModel.Password, false);
-
-            if (result.Succeeded)
-            {
-                NavigationManager.NavigateTo("/");
-            }
-            else
-            {
-                errorMessage = "Ugyldig email eller password";
-            }
+            var token = await ApiService.LoginAsync(loginRequest);
+            await AuthService.SetToken(token);
+            NavigationManager.NavigateTo("/", true);
         }
         catch (Exception ex)
         {

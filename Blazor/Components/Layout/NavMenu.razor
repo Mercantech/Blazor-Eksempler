@@ -1,24 +1,12 @@
-﻿<style>
-    .nav-icon {
-        font-size: 1.2rem; 
-        margin-right: 0.5rem; 
-        vertical-align: middle; 
-        display: inline-block; 
-    }
-
-    .nav-text {
-        display: inline-block; 
-        vertical-align: middle; 
-        line-height: normal; 
-    }
-
-</style>
+﻿@inject AuthService AuthService
+@inject NavigationManager NavigationManager
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Blazor</a>
     </div>
 </div>
+
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
@@ -76,5 +64,109 @@
                 <span class="nav-text">Chat Room</span>
             </NavLink>
         </div>  
+
+        @if (isAuthenticated)
+        {
+            <hr class="nav-divider" />
+            <div class="nav-item px-3">
+                <div class="nav-link user-info">
+                    <span class="bi bi-person-circle nav-icon" aria-hidden="true"></span>
+                    <span class="nav-text">@userName</span>
+                </div>
+            </div>
+            <div class="nav-item px-3">
+                <button class="nav-link logout-button" @onclick="HandleLogout">
+                    <span class="bi bi-box-arrow-right nav-icon" aria-hidden="true"></span>
+                    <span class="nav-text">Log ud</span>
+                </button>
+            </div>
+        }
+        else
+        {
+            <hr class="nav-divider" />
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="login">
+                    <span class="bi bi-box-arrow-in-right nav-icon" aria-hidden="true"></span>
+                    <span class="nav-text">Log ind</span>
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="register">
+                    <span class="bi bi-person-plus nav-icon" aria-hidden="true"></span>
+                    <span class="nav-text">Registrer</span>
+                </NavLink>
+            </div>
+        }
     </nav>
 </div>
+
+<style>
+    .nav-icon {
+        font-size: 1.2rem; 
+        margin-right: 0.5rem; 
+        vertical-align: middle; 
+        display: inline-block; 
+    }
+
+    .nav-text {
+        display: inline-block; 
+        vertical-align: middle; 
+        line-height: normal; 
+    }
+
+    .nav-divider {
+        margin: 0.5rem 1rem;
+        border-color: rgba(255,255,255,0.1);
+    }
+
+    .user-info {
+        color: #fff;
+        opacity: 0.8;
+    }
+
+    .logout-button {
+        width: 100%;
+        text-align: left;
+        background: none;
+        border: none;
+        color: #fff;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+    }
+
+    .logout-button:hover {
+        background: rgba(255,255,255,0.1);
+    }
+</style>
+
+@code {
+    private bool isAuthenticated;
+    private string? userName;
+    private bool isLoaded;
+
+    protected override void OnInitialized()
+    {
+        isAuthenticated = false;
+        userName = null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !isLoaded)
+        {
+            isAuthenticated = await AuthService.IsAuthenticated();
+            if (isAuthenticated)
+            {
+                userName = await AuthService.GetUserNameFromToken();
+            }
+            isLoaded = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        await AuthService.Logout();
+        NavigationManager.NavigateTo("/", true);
+    }
+}

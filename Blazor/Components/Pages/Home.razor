@@ -1,9 +1,17 @@
 ﻿@page "/"
+@inject AuthService AuthService
 
 <PageTitle>Home</PageTitle>
 
 <div class="hero-section">
-    <h1>Velkommen til Blazor Eksempler!</h1>
+    @if (userName != null)
+    {
+        <h1>Velkommen tilbage, @userName!</h1>
+    }
+    else
+    {
+        <h1>Velkommen til Blazor Eksempler!</h1>
+    }
     <p class="lead">Udforsk forskellige eksempler og implementationer med Blazor</p>
 </div>
 
@@ -213,3 +221,12 @@
         font-size: 0.9rem;
     }
 </style>
+
+@code {
+    private string? userName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userName = await AuthService.GetUserNameFromToken();
+    }
+}

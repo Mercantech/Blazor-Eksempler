@@ -10,8 +10,6 @@ namespace Blazor.Data
             : base(options)
         {
         }
-
-        public new DbSet<User> Users { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
     }
-} 
+}
