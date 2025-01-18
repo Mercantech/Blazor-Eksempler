@@ -7,7 +7,8 @@
 <DropDownChamps 
     OnChampionSelected="HandleChampionSelected" 
     ShowSelected="false"
-    ExcludeSelected="false" />
+    ExcludeSelected="false"
+    ShowTitle="true" />
 
 @if (selectedChampion != null)
 {
@@ -100,7 +101,7 @@
     }
 
     .champion-card img {
-        width 50px;
+        width: 50px;
         height: 50px;
         object-fit: cover;
     }
@@ -202,8 +203,8 @@
     }
 
     .champion-icon {
-        width: 50px;
-        height: 50px;
+        width: 30px;
+        height: 30px;
         margin-right: 1rem;
         border: 2px solid #ccc;
     }
@@ -285,12 +286,6 @@
 
     .champion-stats p {
         margin: 0.5rem 0;
-    }
-
-    .champion-icon {
-        width: 80px;
-        height: 80px;
-        border: 3px solid #fff;
     }
 </style>
 
