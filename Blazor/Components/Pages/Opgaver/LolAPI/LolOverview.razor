@@ -4,6 +4,36 @@
 
 <h3>League of Legends Champions</h3>
 
+<DropDownChamps 
+    OnChampionSelected="HandleChampionSelected" 
+    ShowSelected="false"
+    ExcludeSelected="false" />
+
+@if (selectedChampion != null)
+{
+    <div class="featured-champion">
+        <div class="featured-image-container">
+            <img src="@selectedChampion.ImgUrl" alt="@selectedChampion.Name" />
+            <div class="champion-details">
+                <div class="champion-header">
+                    <div class="champion-title-group">
+                        <h2>@selectedChampion.Name</h2>
+                        <h3>@selectedChampion.Title</h3>
+                    </div>
+                </div>
+                <div class="champion-stats">
+                    <p><strong>Klasser:</strong> @selectedChampion.GetClassTypes()</p>
+                    <p><strong>Udgivet:</strong> @selectedChampion.ReleaseDate.ToString("dd/MM/yyyy")</p>
+                    <p><strong>Ressource:</strong> @selectedChampion.Resource</p>
+                    <p><strong>Angrebstype:</strong> @selectedChampion.RangeType</p>
+                    <p><strong>Oprindelse:</strong> @selectedChampion.Origin</p>
+                    <p><strong>Region:</strong> @selectedChampion.Region</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <div class="champion-grid">
     @if (champions != null)
     {
@@ -192,10 +222,82 @@
         font-size: 0.9rem;
         color: #666;
     }
+
+    .featured-champion {
+        width: 100%;
+        max-width: 1200px;
+        margin: 2rem auto;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .featured-image-container {
+        position: relative;
+        width: 100%;
+        height: 500px;
+    }
+
+    .featured-image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .champion-details {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,0.9));
+        color: white;
+        padding: 2rem;
+    }
+
+    .champion-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .champion-title-group {
+        margin-left: 1.5rem;
+    }
+
+    .champion-title-group h2 {
+        font-size: 2.5rem;
+        margin: 0;
+    }
+
+    .champion-title-group h3 {
+        font-size: 1.5rem;
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+    }
+
+    .champion-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .champion-stats p {
+        margin: 0.5rem 0;
+    }
+
+    .champion-icon {
+        width: 80px;
+        height: 80px;
+        border: 3px solid #fff;
+    }
 </style>
 
 @code {
     private Champion[]? champions;
+    private Champion? selectedChampion;
+    private List<Champion> selectedChampions = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -207,31 +309,16 @@
         champion.ShowDetails = !champion.ShowDetails;
     }
 
-    private class Champion
+    private void HandleChampionSelected(Champion champion)
     {
-        public string? Name { get; set; }
-        public string? Title { get; set; }
-        public List<string>? Classes { get; set; }
-        public DateTime ReleaseDate { get; set; }
-        public string? ImgUrl { get; set; }
-        public string? Resource { get; set; }
-        public string? RangeType { get; set; }
-        public string? Origin { get; set; }
-        public string? Region { get; set; }
-        public bool ShowDetails { get; set; }
-
-        public string GetClassTypes()
-        {
-            return Classes != null ? string.Join(", ", Classes) : string.Empty;
-        }
+        selectedChampion = champion;
+        selectedChampions.Add(champion);
     }
 
     private string GetChampionIconUrl(string championName)
     {
         string baseUrl = "https://r2opgaver.mercantec.tech/LOL/Champs/Icon";
-        // If the name has a space, replace it with a underscore
         championName = championName.Replace(" ", "_");
         return $"{baseUrl}/{championName}Square.png";
     }
-
 }

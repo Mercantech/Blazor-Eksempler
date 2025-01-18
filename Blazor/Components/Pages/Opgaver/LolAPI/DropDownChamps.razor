@@ -1,0 +1,201 @@
+@inject HttpClient Http
+
+<div class="dropdown-container">
+    <div class="search-container">
+        <input 
+            type="text" 
+            class="champion-search" 
+            placeholder="Søg efter champion..."
+            @bind-value="SearchText"
+            @bind-value:event="oninput"
+            @onfocusin="ShowResults"
+            @onkeyup="FilterChampions" />
+        
+        @if (IsSearching && FilteredChampions.Any())
+        {
+            <div class="search-results">
+                @foreach (var champion in FilteredChampions.Take(5))
+                {
+                    <div class="search-result-item" @onclick="() => SelectChampion(champion)">
+                        <img src="@GetChampionIconUrl(champion.Name)" alt="@champion.Name" class="champion-icon" />
+                        <div class="champion-info">
+                            <span class="champion-name">@champion.Name</span>
+                            <span class="champion-title">@champion.Title</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (ShowSelected && SelectedChampion != null)
+    {
+        <div class="selected-champion">
+            <img src="@GetChampionIconUrl(SelectedChampion.Name)" alt="@SelectedChampion.Name" class="champion-icon" />
+            <div class="champion-info">
+                <span class="champion-name">@SelectedChampion.Name</span>
+                <span class="champion-title">@SelectedChampion.Title</span>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .dropdown-container {
+        width: 100%;
+        max-width: 800px;
+        margin: 1rem auto;
+    }
+
+    .search-container {
+        position: relative;
+        width: 100%;
+    }
+
+    .champion-search {
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 1rem;
+        border: 2px solid #ccc;
+        border-radius: 4px;
+        background-color: white;
+        margin-bottom: 0.5rem;
+    }
+
+    .search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        z-index: 1000;
+        width: 100%;
+    }
+
+    .search-result-item {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border-bottom: 1px solid #eee;
+    }
+
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+
+    .search-result-item:hover {
+        background-color: #f0f0f0;
+    }
+
+    .selected-champion {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        margin-top: 1rem;
+        border: 1px solid #e9ecef;
+        width: 100%;
+    }
+
+    .champion-icon {
+        width: 50px;
+        height: 50px;
+        border: 2px solid #ccc;
+    }
+
+    .champion-info {
+        display: flex;
+        flex-direction: column;
+        margin-left: 1rem;
+        flex: 1;
+    }
+
+    .champion-name {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #333;
+    }
+
+    .champion-title {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 0.2rem;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public EventCallback<Champion> OnChampionSelected { get; set; }
+
+    [Parameter]
+    public bool ShowSelected { get; set; } = true;
+
+    [Parameter]
+    public bool ExcludeSelected { get; set; } = true;
+
+    private Champion[]? champions;
+    private Champion? SelectedChampion;
+    private string SearchText = string.Empty;
+    private bool IsSearching = false;
+    private List<Champion> FilteredChampions = new();
+    private List<Champion> selectedChampions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        champions = await Http.GetFromJsonAsync<Champion[]>("https://opgaver.mercantec.tech/LeagueOfLegends");
+        selectedChampions = new();
+    }
+
+    private void FilterChampions()
+    {
+        if (string.IsNullOrWhiteSpace(SearchText) || champions == null)
+        {
+            FilteredChampions = new List<Champion>();
+            return;
+        }
+
+        var query = champions.AsQueryable();
+        
+        if (ExcludeSelected)
+        {
+            query = query.Where(c => !selectedChampions.Any(ec => ec.Name == c.Name));
+        }
+
+        FilteredChampions = query
+            .Where(c => c.Name!.ToLower().Contains(SearchText.ToLower()))
+            .ToList();
+    }
+
+    private async Task SelectChampion(Champion champion)
+    {
+        if (champion != null)
+        {
+            SelectedChampion = champion;
+            if (ExcludeSelected)
+            {
+                selectedChampions.Add(champion);
+            }
+            SearchText = string.Empty;
+            IsSearching = false;
+            await OnChampionSelected.InvokeAsync(champion);
+        }
+    }
+
+    private void ShowResults()
+    {
+        IsSearching = true;
+    }
+
+    private string GetChampionIconUrl(string championName)
+    {
+        string baseUrl = "https://r2opgaver.mercantec.tech/LOL/Champs/Icon";
+        championName = championName.Replace(" ", "_");
+        return $"{baseUrl}/{championName}Square.png";
+    }
+}
