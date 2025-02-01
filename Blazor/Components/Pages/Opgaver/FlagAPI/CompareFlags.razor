@@ -1,0 +1,449 @@
+@page "/opgaver/FlagPixels"
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject ImageComparer ImageComparer
+
+<div class="game-container">
+    <h3>Gæt Flaget!</h3>
+    
+    <div class="flag-display">
+        <div class="flag-container @(hasGuessed ? "" : "no-guesses")">
+            <img src="@targetCountry?.flags.png" alt="Target flag" class="base-flag" />
+            <canvas @ref="targetCanvas" width="300" height="200" class="reveal-canvas"></canvas>
+        </div>
+    </div>
+    <div>
+        <h3 style="color: red;">Under konstruktion der er stadig noget der mangler!</h3>
+    </div>
+    <div class="guess-section">
+        <input value="@searchText"
+               @oninput="@((e) => OnSearchInput(e))"
+               placeholder="Søg efter land..." 
+               class="country-search" />
+                
+        @if (!string.IsNullOrEmpty(searchText) && filteredCountries.Any())
+        {
+            <div class="country-list">
+                @foreach (var country in filteredCountries.Take(5))
+                {
+                    <div class="country-item" @onclick="() => MakeGuess(country)">
+                        <img src="@country.flags.png" alt="@country.name.common flag" class="mini-flag" />
+                        <span>@country.name.common</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (lastGuess != null)
+    {
+        <div class="guess-result">
+            <div class="comparison">
+                <div class="flag-pair">
+                    <img src="@lastGuess.flags.png" alt="Your guess" class="guess-flag" />
+                    <span>Dit gæt: @lastGuess.name.common</span>
+                </div>
+                <div class="match-percentage">
+                    <span>@matchPercentage% match!</span>
+                    <div class="percentage-bar">
+                        <div class="percentage-fill" style="width: @matchPercentage%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (guesses.Any())
+    {
+        <div class="guess-history">
+            <h4>Dine gæt:</h4>
+            @foreach (var guess in guesses.OrderByDescending(g => g.Timestamp))
+            {
+                <div class="guess-result">
+                    <div class="comparison">
+                        <div class="flag-pair">
+                            <img src="@guess.Country.flags.png" alt="Your guess" class="guess-flag" />
+                            <div class="guess-info">
+                                <span>@guess.Country.name.common</span>
+                                <div class="match-percentage">
+                                    <span>@guess.MatchPercentage% match!</span>
+                                    <div class="percentage-bar">
+                                        <div class="percentage-fill" style="width: @guess.MatchPercentage%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .game-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+
+    .flag-display {
+        margin: 2rem 0;
+        display: flex;
+        justify-content: center;
+    }
+
+    canvas {
+        border: 2px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .country-search {
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 1rem;
+        border: 2px solid #ccc;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+    }
+
+    .country-list {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .country-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        cursor: pointer;
+        gap: 1rem;
+    }
+
+    .country-item:hover {
+        background-color: #f0f0f0;
+    }
+
+    .mini-flag {
+        width: 50px;
+        height: 30px;
+        object-fit: cover;
+        border: 1px solid #ccc;
+    }
+
+    .guess-result {
+        margin-top: 2rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .comparison {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .flag-pair {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .guess-flag {
+        width: 300px;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .match-percentage {
+        text-align: center;
+    }
+
+    .percentage-bar {
+        height: 20px;
+        background-color: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+
+    .percentage-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #28a745 0%, #ffc107 100%);
+        transition: width 0.3s ease;
+    }
+
+    .flag-container {
+        position: relative;
+        width: 300px;
+        height: 200px;
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .no-guesses .base-flag {
+        opacity: 0;
+    }
+
+    .base-flag {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: opacity 0.3s ease;
+    }
+
+    .reveal-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    .guess-history {
+        margin-top: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .guess-result {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .guess-result:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .guess-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .flag-pair {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .guess-flag {
+        width: 150px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+    }
+</style>
+
+@code {
+    private ElementReference targetCanvas;
+    private List<Country> countries = new();
+    private List<Country> filteredCountries = new();
+    private string searchText = "";
+    private Country? targetCountry;
+    private Country? lastGuess;
+    private double matchPercentage = 0;
+    private bool firstRender = true;
+    private bool[,]? matchingPixels;
+    private bool[,]? cumulativeMatchingPixels;
+    private bool hasGuessed = false;
+    private List<Guess> guesses = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try 
+        {
+            var response = await Http.GetFromJsonAsync<List<Country>>("https://opgaver.mercantec.tech/api/countries");
+            if (response != null)
+            {
+                countries = response;
+                Console.WriteLine($"Loaded {countries.Count} countries");
+            }
+            
+            var random = new Random();
+            targetCountry = countries[random.Next(countries.Count)];
+            hasGuessed = false;
+            cumulativeMatchingPixels = new bool[300, 200];
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading countries: {ex.Message}");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (this.firstRender)
+        {
+            this.firstRender = false;
+            await LoadTargetFlag();
+        } 
+    }
+
+    private async Task StartNewGame()
+    {
+        var random = new Random();
+        targetCountry = countries[random.Next(countries.Count)];
+        lastGuess = null;
+        matchPercentage = 0;
+        hasGuessed = false;
+        guesses.Clear();
+        cumulativeMatchingPixels = new bool[300, 200];
+        await LoadTargetFlag();
+        StateHasChanged();
+    }
+
+    private async Task LoadTargetFlag()
+    {
+        if (targetCountry != null)
+        {
+            try 
+            {
+                await JSRuntime.InvokeVoidAsync("loadImageToCanvas", targetCanvas);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading flag: {ex.Message}");
+            }
+        }
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchText = e.Value?.ToString() ?? string.Empty;
+        Console.WriteLine($"Search text updated to: {searchText}");
+        FilterCountries();
+    }
+
+    private void FilterCountries()
+    {
+        Console.WriteLine($"Filtering with text: {searchText}");
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            filteredCountries.Clear();
+            return;
+        }
+
+        filteredCountries = countries
+            .Where(c => c.name.common.ToLower().Contains(searchText.ToLower()))
+            .ToList();
+        
+        Console.WriteLine($"Found {filteredCountries.Count} matches");
+        StateHasChanged();
+    }
+
+    private async Task MakeGuess(Country guessedCountry)
+    {
+        lastGuess = guessedCountry;
+        hasGuessed = true;
+        
+        if (targetCountry != null)
+        {
+            try 
+            {
+                var result = await ImageComparer.CompareImages(
+                    targetCountry.flags.png, 
+                    guessedCountry.flags.png);
+                
+                matchPercentage = Math.Round(result.MatchPercentage, 1);
+                matchingPixels = result.MatchingPixels;
+
+                guesses.Add(new Guess 
+                { 
+                    Country = guessedCountry,
+                    MatchPercentage = matchPercentage,
+                    Timestamp = DateTime.Now
+                });
+                
+                UpdateCumulativeMatches();
+                await RevealCumulativePixels();
+                
+                if (matchPercentage > 99)
+                {
+                    await Task.Delay(1000);
+                    await StartNewGame();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error comparing flags: {ex.Message}");
+            }
+        }
+        searchText = "";
+        filteredCountries.Clear();
+    }
+
+    private void UpdateCumulativeMatches()
+    {
+        if (matchingPixels == null) return;
+        
+        var width = matchingPixels.GetLength(0);
+        var height = matchingPixels.GetLength(1);
+        
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                if (matchingPixels[x, y])
+                {
+                    cumulativeMatchingPixels![x, y] = true;
+                }
+            }
+        }
+    }
+
+    private async Task RevealCumulativePixels()
+    {
+        if (cumulativeMatchingPixels == null) return;
+
+        var width = cumulativeMatchingPixels.GetLength(0);
+        var height = cumulativeMatchingPixels.GetLength(1);
+        var flatPixels = new List<bool>();
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                flatPixels.Add(cumulativeMatchingPixels[x, y]);
+            }
+        }
+
+        await JSRuntime.InvokeVoidAsync("revealPixels", targetCanvas, width, height, flatPixels);
+    }
+
+    public class Country
+    {
+        public Name name { get; set; } = new();
+        public Flags flags { get; set; } = new();
+    }
+
+    public class Name
+    {
+        public string common { get; set; } = "";
+    }
+
+    public class Flags
+    {
+        public string png { get; set; } = "";
+    }
+
+    public class Guess
+    {
+        public Country Country { get; set; }
+        public double MatchPercentage { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+}

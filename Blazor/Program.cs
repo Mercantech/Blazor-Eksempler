@@ -43,6 +43,7 @@ namespace Blazor
             builder.Services.AddSignalR();
 
             builder.Services.AddScoped<APIService>();
+            builder.Services.AddScoped<ImageComparer>();
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<AuthService>();
 

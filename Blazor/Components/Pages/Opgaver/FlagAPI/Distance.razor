@@ -1,0 +1,504 @@
+@page "/opgaver/FlagDistance"
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<div class="game-container">
+    <div class="game-intro @(isRulesCollapsed ? "collapsed" : "")">
+        <div class="intro-header" @onclick="ToggleRules">
+            <h2>Flag Distance</h2>
+            <button class="toggle-button">
+                <i class="bi bi-chevron-@(isRulesCollapsed ? "down" : "up")"></i>
+            </button>
+        </div>
+        <div class="game-rules">
+            <p>Gæt hvilket land flaget tilhører! For hvert gæt får du:</p>
+            <ul>
+                <li>🎯 Afstanden til det rigtige land i kilometer</li>
+                <li>➡️ Retningen du skal gå for at nå det rigtige land</li>
+                <li>📊 En procentdel der viser hvor tæt du er på målet</li>
+            </ul>
+            <p>Du vinder når du gætter det rigtige land! (inden for 10 km)</p>
+        </div>
+    </div>
+
+    <div class="flag-display">
+        @if (targetCountry != null)
+        {
+                @if (hasWon)
+                {
+                    <span class="celebration">🎉</span>
+                }
+        }
+    </div>
+
+    @if (hasWon)
+    {
+        <div class="next-game">
+            <button class="next-button" @onclick="StartNewGame">
+                Næste Flag →
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="guess-section">
+            <input value="@searchText"
+                   @oninput="@((e) => OnSearchInput(e))"
+                   @onkeydown="@HandleKeyPress"
+                   placeholder="Søg efter land..." 
+                   class="country-search" />
+            
+            @if (!string.IsNullOrEmpty(searchText) && filteredCountries.Any())
+            {
+                <div class="country-list">
+                    @foreach (var country in filteredCountries.Take(5))
+                    {
+                        <div class="country-item" @onclick="() => MakeGuess(country)">
+                            <img src="@country.flags.png" alt="@country.name.common flag" class="country-flag" />
+                            <span>@country.name.common</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @if (guesses.Any())
+    {
+        <div class="guesses-grid">
+            @foreach (var guess in guesses.OrderByDescending(g => g.Timestamp))
+            {
+                <div class="guess-row">
+                    <div class="country-cell">
+                        <img src="@guess.Country.flags.png" alt="@guess.Country.name.common flag" class="guess-flag" />
+                        <span>@guess.Country.name.common</span>
+                    </div>
+                    <div class="distance-cell">@FormatDistance(guess.Distance) km</div>
+                    <div class="direction-cell">
+                        <i class="direction-arrow" style="transform: rotate(@(GetArrowRotation(guess.Direction))deg)">➜</i>
+                    </div>
+                    <div class="percentage-cell">@GetMatchPercentage(guess.Distance)%</div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .game-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 1rem;
+    }
+
+    .game-intro {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .intro-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+    }
+
+    .toggle-button {
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+        padding: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+    }
+
+    .toggle-button:hover {
+        color: #333;
+    }
+
+    .game-intro.collapsed .game-rules {
+        display: none;
+    }
+
+    .game-intro.collapsed {
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .game-intro.collapsed h2 {
+        margin-bottom: 0;
+    }
+
+    .game-rules {
+        text-align: left;
+        max-width: 600px;
+        margin: 0 auto;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .game-rules p {
+        margin: 0.5rem 0;
+        color: #666;
+    }
+
+    .game-rules ul {
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0;
+    }
+
+    .game-rules li {
+        margin: 0.5rem 0;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+
+    .game-rules li::before {
+        position: absolute;
+        left: 0;
+    }
+
+    .flag-label {
+        background-color: #98FB98;
+        color: #333;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        display: inline-block;
+        margin: 1rem 0;
+        font-weight: bold;
+    }
+
+    .guesses-grid {
+        margin-top: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .guess-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr auto 1fr;
+        gap: 0.5rem;
+        align-items: center;
+        background: white;
+        padding: 0.75rem;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+    }
+
+    .country-cell {
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .distance-cell {
+        text-align: center;
+    }
+
+    .direction-cell {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .direction-arrow {
+        display: inline-block;
+        font-style: normal;
+        color: #007bff;
+        font-size: 1.2rem;
+    }
+
+    .percentage-cell {
+        text-align: right;
+        font-weight: bold;
+    }
+
+    .country-search {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .country-list {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .country-item {
+        padding: 0.75rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: background-color 0.2s;
+    }
+
+    .country-flag {
+        width: 30px;
+        height: 20px;
+        object-fit: cover;
+        border-radius: 2px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .country-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .celebration {
+        display: inline-block;
+        margin-left: 0.5rem;
+        animation: bounce 0.5s ease infinite;
+    }
+
+    .next-game {
+        display: flex;
+        justify-content: center;
+        margin: 2rem 0;
+    }
+
+    .next-button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .next-button:hover {
+        background-color: #218838;
+    }
+
+    .guess-flag {
+        width: 45px;
+        height: 30px;
+        object-fit: cover;
+        border-radius: 2px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    @@keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+</style>
+
+@code {
+    private Country? targetCountry;
+    private string searchText = "";
+    private List<Country> countries = new();
+    private List<Country> filteredCountries = new();
+    private List<Guess> guesses = new();
+    private bool hasWon = false;
+    private bool isRulesCollapsed = false;
+
+    public class Country
+    {
+        public string id { get; set; }
+        public Name name { get; set; }
+        public double[] latlng { get; set; }
+        public Flags flags { get; set; }
+    }
+
+    public class Name
+    {
+        public string common { get; set; }
+        public string official { get; set; }
+    }
+
+    public class Flags
+    {
+        public string png { get; set; }
+    }
+
+    public class Guess
+    {
+        public Country Country { get; set; }
+        public double Distance { get; set; }
+        public string Direction { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCountries();
+        await StartNewGame();
+    }
+
+    private async Task LoadCountries()
+    {
+        try 
+        {
+            var response = await Http.GetFromJsonAsync<List<Country>>("https://opgaver.mercantec.tech/api/countries");
+            if (response != null)
+            {
+                countries = response;
+                Console.WriteLine($"Loaded {countries.Count} countries");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading countries: {ex.Message}");
+        }
+    }
+
+    private async Task StartNewGame()
+    {
+        var random = new Random();
+        targetCountry = countries[random.Next(countries.Count)];
+        guesses.Clear();
+        searchText = "";
+        filteredCountries.Clear();
+        hasWon = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && filteredCountries.Any())
+        {
+            await MakeGuess(filteredCountries.First());
+        }
+    }
+
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        searchText = e.Value?.ToString() ?? "";
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            filteredCountries.Clear();
+            return;
+        }
+
+        // Filtrer lande der allerede er gættet fra
+        var guessedCountries = guesses.Select(g => g.Country.id).ToHashSet();
+        
+        filteredCountries = countries
+            .Where(c => c.name.common.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+            .Where(c => !guessedCountries.Contains(c.id))  // Fjern allerede gættede lande
+            .ToList();
+    }
+
+    private async Task MakeGuess(Country guessedCountry)
+    {
+        if (targetCountry == null) return;
+
+        var distance = CalculateDistance(
+            guessedCountry.latlng[0], guessedCountry.latlng[1],
+            targetCountry.latlng[0], targetCountry.latlng[1]
+        );
+
+        var direction = CalculateDirection(
+            guessedCountry.latlng[0], guessedCountry.latlng[1],
+            targetCountry.latlng[0], targetCountry.latlng[1]
+        );
+
+        guesses.Add(new Guess 
+        { 
+            Country = guessedCountry,
+            Distance = distance,
+            Direction = direction,
+            Timestamp = DateTime.Now
+        });
+
+        if (distance < 10) // Inden for 10 km betragtes som korrekt
+        {
+            hasWon = true;
+        }
+
+        searchText = "";
+        filteredCountries.Clear();
+    }
+
+    private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double R = 6371; // Jordens radius i kilometer
+        var dLat = ToRad(lat2 - lat1);
+        var dLon = ToRad(lon2 - lon1);
+        var a = Math.Sin(dLat/2) * Math.Sin(dLat/2) +
+                Math.Cos(ToRad(lat1)) * Math.Cos(ToRad(lat2)) *
+                Math.Sin(dLon/2) * Math.Sin(dLon/2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1-a));
+        return R * c;
+    }
+
+    private string CalculateDirection(double lat1, double lon1, double lat2, double lon2)
+    {
+        var dLon = ToRad(lon2 - lon1);
+        var y = Math.Sin(dLon) * Math.Cos(ToRad(lat2));
+        var x = Math.Cos(ToRad(lat1)) * Math.Sin(ToRad(lat2)) -
+                Math.Sin(ToRad(lat1)) * Math.Cos(ToRad(lat2)) * Math.Cos(dLon);
+        var brng = Math.Atan2(y, x);
+        var degrees = ToDeg(brng);
+        return DegreesToCardinal(degrees);
+    }
+
+    private double ToRad(double degrees) => degrees * Math.PI / 180;
+    private double ToDeg(double rad) => rad * 180 / Math.PI;
+
+    private string DegreesToCardinal(double degrees)
+    {
+        string[] cardinals = { "N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV" };
+        var index = ((int)Math.Round((degrees + 360) % 360 / 45)) % 8;
+        return cardinals[index];
+    }
+
+    private string FormatDistance(double distance)
+    {
+        return Math.Round(distance).ToString("N0");
+    }
+
+    private string GetDirection(string direction)
+    {
+        return $"Målet ligger mod {direction}";
+    }
+
+    private string GetArrowRotation(string direction)
+    {
+        var rotations = new Dictionary<string, string> {
+            {"N", "0"},
+            {"NØ", "45"},
+            {"Ø", "90"},
+            {"SØ", "135"},
+            {"S", "180"},
+            {"SV", "225"},
+            {"V", "270"},
+            {"NV", "315"}
+        };
+        return rotations.GetValueOrDefault(direction, "0");
+    }
+
+    private string GetMatchPercentage(double distance)
+    {
+        // Beregn en procentdel baseret på afstand
+        // Dette er en simpel beregning - du kan justere formlen efter behov
+        const double maxDistance = 20000; // Maximum afstand på jorden
+        var percentage = Math.Max(0, Math.Min(100, 100 * (1 - distance / maxDistance)));
+        return Math.Round(percentage).ToString();
+    }
+
+    private void ToggleRules()
+    {
+        isRulesCollapsed = !isRulesCollapsed;
+    }
+}
