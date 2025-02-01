@@ -1,0 +1,119 @@
+<div class="menu-container">
+    <button class="info-button" @onclick="ToggleMenu">
+        <i class="fas fa-info-circle"></i>
+    </button>
+
+    @if (isMenuOpen)
+    {
+        <nav class="dropdown-menu">
+            <ul class="nav-links">
+                <li><NavLink href="/">Blazor Eksempler</NavLink></li>
+                <li><NavLink href="http://H1.mercantec.tech">H1</NavLink></li>
+                <li><NavLink href="http://H1-MAGS.mercantec.tech">H1-MAGS</NavLink></li>
+                <li><NavLink href="http://H2.mercantec.tech">H2</NavLink></li>
+                <li><NavLink href="http://H2-MAGS.mercantec.tech">H2-MAGS</NavLink></li>
+                <li><NavLink href="http://H5.mercantec.tech">H5</NavLink></li>
+                <li><NavLink href="http://H5-MAGS.mercantec.tech">H5-MAGS</NavLink></li>
+                <li><NavLink href="http://ml.mercantec.tech">ML</NavLink></li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<style>
+    .menu-container {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        z-index: 9999;
+    }
+
+    .info-button {
+        background: white;
+        border: 1px solid #eaeaea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: all 0.2s ease;
+    }
+
+    .info-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        bottom: 50px;
+        right: 0;
+        background: white;
+        border: 1px solid #eaeaea;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        min-width: 200px;
+        z-index: 9999;
+        display: block;
+        visibility: visible;
+    }
+
+    .nav-links {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        opacity: 1;
+    }
+
+    .nav-links a {
+        color: #666;
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: color 0.2s ease;
+        position: relative;
+    }
+
+    .nav-links a:hover {
+        color: #000;
+    }
+
+    .nav-links a::after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 2px;
+        bottom: -4px;
+        left: 0;
+        background-color: #000;
+        transition: width 0.2s ease;
+    }
+
+    .nav-links a:hover::after {
+        width: 100%;
+    }
+
+    .nav-links a.active {
+        color: #000;
+    }
+
+    .nav-links a.active::after {
+        width: 100%;
+    }
+</style>
+
+@code {
+    private bool isMenuOpen;
+
+    private void ToggleMenu()
+    {
+        isMenuOpen = !isMenuOpen;
+    }
+}
