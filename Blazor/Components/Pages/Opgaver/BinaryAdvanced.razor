@@ -1,0 +1,485 @@
+@page "/Opgaver/BinaryAdvanced"
+
+<PageTitle> Binær Kodeomformer </PageTitle>
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h1 class="h3">IP Address Converter | Binær Kodeomformer</h1>
+            <p class="mb-0">Opgaven findes på <a href="https://mercantec.notion.site/Bin-r-Kodeomformer-45731045d4094c7fb0df703800c6b962?pvs=4" class="btn btn-link">Notion</a></p>
+        </div>
+
+        <div class="card-body">
+            <!-- IP til Binær sektion -->
+            <div class="mb-4">
+                <h3 class="h4 mb-3">IP => Binær</h3>
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" @bind="@Octet1" max="255" min="0" />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" @bind="@Octet2" max="255" min="0" />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" @bind="@Octet3" max="255" min="0" />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" @bind="@Octet4" max="255" min="0" />
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="input-group">
+                        <span class="input-group-text">/</span>
+                        <input type="number" class="form-control" @bind="@SubnetMask" min="0" max="32" />
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <p class="fw-bold">Binær repræsentation:</p>
+                    <div class="alert alert-info">@BinaryIpAddress</div>
+                </div>
+                
+                <!-- Subnet Information -->
+                <div class="mt-3">
+                    <h4>Subnet Detaljer</h4>
+                    <table class="table table-bordered">
+                        <tr>
+                            <td>Subnet Maske:</td>
+                            <td>@SubnetMaskString</td>
+                        </tr>
+                        <tr>
+                            <td>Network Address:</td>
+                            <td>@NetworkAddress</td>
+                        </tr>
+                        <tr>
+                            <td>Broadcast Address:</td>
+                            <td>@BroadcastAddress</td>
+                        </tr>
+                        <tr>
+                            <td>Første Brugbare IP:</td>
+                            <td>@FirstUsableIp</td>
+                        </tr>
+                        <tr>
+                            <td>Sidste Brugbare IP:</td>
+                            <td>@LastUsableIp</td>
+                        </tr>
+                        <tr>
+                            <td>Antal Brugbare IPs:</td>
+                            <td>@UsableIpCount</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- IP Compatibility Checker -->
+            <div class="mb-4">
+                <h3 class="h4 mb-3">IP Compatibility Checker</h3>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label>Første IP med subnet</label>
+                        <input type="text" class="form-control" @bind="@FirstIpWithSubnet" placeholder="f.eks. 192.168.1.1/24" />
+                    </div>
+                    <div class="col-md-6">
+                        <label>Anden IP med subnet</label>
+                        <input type="text" class="form-control" @bind="@SecondIpWithSubnet" placeholder="f.eks. 192.168.1.100/24" />
+                    </div>
+                </div>
+                <button class="btn btn-primary mt-2" @onclick="CheckIpCompatibility">Tjek Kompatibilitet</button>
+                @if (!string.IsNullOrEmpty(CompatibilityResult))
+                {
+                    <div class="alert @(CanCommunicate ? "alert-success" : "alert-danger") mt-2">
+                        @foreach (var line in CompatibilityResult.Split("\n"))
+                        {
+                            @line
+                            <br />
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Binær til IP sektion -->
+            <div>
+                <h3 class="h4 mb-3">Binær => IP</h3>
+                <input type="string" class="form-control mb-3" @oninput="ValidateBinaryInput" @bind="@BinaryToIpAddress" />
+                <p class="fw-bold">IP Adresse:</p>
+                <div class="alert alert-success">@IpAddressFromBinary</div>
+            </div>
+
+            <!-- Hexadecimal Converter sektion -->
+            <div class="mb-4">
+                <h3 class="h4 mb-3">Hexadecimal Converter</h3>
+                
+                <!-- IP til Hex -->
+                <div class="mb-3">
+                    <h5>IP => Hexadecimal</h5>
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <input type="number" class="form-control" @bind="@HexOctet1" max="255" min="0" placeholder="192" />
+                        </div>
+                        <div class="col-md-3">
+                            <input type="number" class="form-control" @bind="@HexOctet2" max="255" min="0" placeholder="168" />
+                        </div>
+                        <div class="col-md-3">
+                            <input type="number" class="form-control" @bind="@HexOctet3" max="255" min="0" placeholder="1" />
+                        </div>
+                        <div class="col-md-3">
+                            <input type="number" class="form-control" @bind="@HexOctet4" max="255" min="0" placeholder="1" />
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p class="fw-bold">Hexadecimal:</p>
+                        <div class="alert alert-info">@IpToHex</div>
+                    </div>
+                </div>
+
+                <!-- Hex til IP -->
+                <div class="mb-3">
+                    <h5>Hexadecimal => IP</h5>
+                    <input type="text" class="form-control mb-3" @bind="@HexToConvert" placeholder="C0.A8.01.01" />
+                    <p class="fw-bold">IP Adresse:</p>
+                    <div class="alert alert-success">@HexToIp</div>
+                </div>
+
+                <!-- Konverteringstabel -->
+                <div class="mt-4">
+                    <h5>Konverteringstabel</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Decimal</th>
+                                    <th>Hexadecimal</th>
+                                    <th>Binary</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in GetConversionTable())
+                                {
+                                    <tr>
+                                        <td>@row.dec</td>
+                                        <td>@row.hex</td>
+                                        <td>@row.bin</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public int Octet1 = 127;
+    public int Octet2 = 0;
+    public int Octet3 = 0;
+    public int Octet4 = 1;
+
+    public List<int> IpAddress => new List<int> { Octet1, Octet2, Octet3, Octet4 };
+
+    List<int> converterList = new List<int> { 128, 64, 32, 16, 8, 4, 2, 1 };
+
+    public string BinaryIpAddress => ConvertIpAddressToBinary(IpAddress);
+
+    public string BinaryToIpAddress = "11111111.00000000.00000000.00000001";
+
+    public string IpAddressFromBinary => ConvertBinaryToIpAddress(BinaryToIpAddress);
+
+    public int SubnetMask { get; set; } = Math.Min(32, Math.Max(0, 24));
+    public string FirstIpWithSubnet { get; set; } = "192.168.1.10/24";
+    public string SecondIpWithSubnet { get; set; } = "192.168.2.20/24";
+    public string CompatibilityResult { get; set; } = "De to IP-adresser kan IKKE kommunikere direkte (forskellige subnets)!";
+    public bool CanCommunicate { get; set; } = false;
+
+    public string SubnetMaskString => GetSubnetMaskString(SubnetMask);
+    public string NetworkAddress => CalculateNetworkAddress();
+    public string BroadcastAddress => CalculateBroadcastAddress();
+    public string FirstUsableIp => CalculateFirstUsableIp();
+    public string LastUsableIp => CalculateLastUsableIp();
+    public string UsableIpCount => CalculateUsableIpCount();
+
+    // Nye properties til hex conversion
+    public int HexOctet1 { get; set; } = 192;
+    public int HexOctet2 { get; set; } = 168;
+    public int HexOctet3 { get; set; } = 1;
+    public int HexOctet4 { get; set; } = 1;
+    public string HexToConvert { get; set; } = "C0.A8.01.01";
+
+    public string IpToHex => ConvertIpToHex();
+    public string HexToIp => ConvertHexToIp();
+
+    protected override void OnInitialized()
+    {
+        CheckIpCompatibility();
+    }
+
+    private string ConvertIpAddressToBinary(List<int> ipAddress)
+    {
+        string BinaryReturn = "";
+
+        foreach (int octet in ipAddress)
+        {
+            BinaryReturn += OctetToBinary(octet);
+            BinaryReturn += ".";
+        }
+        BinaryReturn = BinaryReturn.Remove(BinaryReturn.Length - 1, 1);
+        return BinaryReturn;
+
+    }
+    private string OctetToBinary(int octet)
+    {
+        string binary = "";
+        foreach (int number in converterList)
+        {
+            if (octet >= number)
+            {
+                octet -= number;
+                binary += "1";
+            }
+            else { binary += "0"; }
+        }
+        return binary;
+    }
+
+    private string ConvertBinaryToIpAddress(string binary)
+    {
+        char[] allowedChars = { '0', '1', '.' };
+
+        int count = binary.Count(c => !allowedChars.Contains(c));
+
+        if (binary.Length != originalLength || count > 0)
+        {
+            return "Dit input matcher ikke en binærkodestreng!";
+        }
+        var binaryOctets = binary.Split('.');
+        var ipOctets = new int[binaryOctets.Length];
+
+        for (int i = 0; i < binaryOctets.Length; i++)
+        {
+            ipOctets[i] = BinaryToOctet(binaryOctets[i]);
+        }
+
+        return string.Join(".", ipOctets);
+    }
+    private int BinaryToOctet(string octet)
+    {
+        int ipOctet = 0;
+
+        for (int i = 0; i < octet.Length; i++)
+        {
+            int bit = octet[i] - '0'; // Convert the character to an integer
+            ipOctet += bit * converterList[i];
+        }
+
+        return ipOctet;
+    }
+
+    private int originalLength = "11111111.00000000.00000000.00000001".Length;
+
+    private void ValidateBinaryInput(ChangeEventArgs e)
+    {
+        var input = e.Value.ToString();
+        if (System.Text.RegularExpressions.Regex.IsMatch(input, "^[01]+$") && input.Length <= originalLength)
+        {
+            BinaryToIpAddress = input;
+        }
+    }
+
+    private string GetSubnetMaskString(int mask)
+    {
+        if (mask < 0 || mask > 32) return "Invalid mask";
+        
+        int fullOctets = mask / 8;
+        int remainingBits = mask % 8;
+        List<int> octets = new List<int>();
+
+        for (int i = 0; i < 4; i++)
+        {
+            if (i < fullOctets)
+                octets.Add(255);
+            else if (i == fullOctets && remainingBits > 0)
+                octets.Add(256 - (1 << (8 - remainingBits)));
+            else
+                octets.Add(0);
+        }
+
+        return string.Join(".", octets);
+    }
+
+    private string CalculateNetworkAddress()
+    {
+        var maskOctets = GetSubnetMaskString(SubnetMask).Split('.').Select(int.Parse).ToList();
+        var networkOctets = new List<int>();
+
+        for (int i = 0; i < 4; i++)
+        {
+            networkOctets.Add(IpAddress[i] & maskOctets[i]);
+        }
+
+        return string.Join(".", networkOctets);
+    }
+
+    private string CalculateBroadcastAddress()
+    {
+        var maskOctets = GetSubnetMaskString(SubnetMask).Split('.').Select(int.Parse).ToList();
+        var broadcastOctets = new List<int>();
+
+        for (int i = 0; i < 4; i++)
+        {
+            broadcastOctets.Add(IpAddress[i] | (255 - maskOctets[i]));
+        }
+
+        return string.Join(".", broadcastOctets);
+    }
+
+    private string CalculateFirstUsableIp()
+    {
+        var networkOctets = NetworkAddress.Split('.').Select(int.Parse).ToList();
+        networkOctets[3]++;
+        return string.Join(".", networkOctets);
+    }
+
+    private string CalculateLastUsableIp()
+    {
+        var broadcastOctets = BroadcastAddress.Split('.').Select(int.Parse).ToList();
+        broadcastOctets[3]--;
+        return string.Join(".", broadcastOctets);
+    }
+
+    private string CalculateUsableIpCount()
+    {
+        if (SubnetMask >= 31) return "0";
+        return Math.Pow(2, 32 - SubnetMask) - 2 + "";
+    }
+
+    private void CheckIpCompatibility()
+    {
+        try
+        {
+            var (ip1, mask1) = ParseIpWithSubnet(FirstIpWithSubnet);
+            var (ip2, mask2) = ParseIpWithSubnet(SecondIpWithSubnet);
+
+            var network1 = GetNetwork(ip1, mask1);
+            var network2 = GetNetwork(ip2, mask2);
+
+            var networkRange1 = GetNetworkRange(ip1, mask1);
+            var networkRange2 = GetNetworkRange(ip2, mask2);
+
+            CanCommunicate = network1 == network2;
+            
+            if (CanCommunicate)
+            {
+                CompatibilityResult = $"De to IP-adresser kan kommunikere med hinanden!\n\n" +
+                                    $"Begge IP-adresser er i samme subnet ({network1}/{mask1})\n" +
+                                    $"Subnet range: {networkRange1.start} - {networkRange1.end}";
+            }
+            else
+            {
+                CompatibilityResult = $"De to IP-adresser kan IKKE kommunikere direkte!\n\n" +
+                                    $"IP 1 er i subnet: {network1}/{mask1} (Range: {networkRange1.start} - {networkRange1.end})\n" +
+                                    $"IP 2 er i subnet: {network2}/{mask2} (Range: {networkRange2.start} - {networkRange2.end})\n\n" +
+                                    $"Der kræves en router for at forbinde disse netværk.";
+            }
+        }
+        catch
+        {
+            CompatibilityResult = "Ugyldig IP eller subnet format. Brug format: xxx.xxx.xxx.xxx/xx";
+            CanCommunicate = false;
+        }
+    }
+
+    private (string start, string end) GetNetworkRange(string ip, int mask)
+    {
+        var ipOctets = ip.Split('.').Select(int.Parse).ToList();
+        var maskOctets = GetSubnetMaskString(mask).Split('.').Select(int.Parse).ToList();
+        
+        // Calculate network address
+        var networkOctets = new List<int>();
+        for (int i = 0; i < 4; i++)
+        {
+            networkOctets.Add(ipOctets[i] & maskOctets[i]);
+        }
+
+        // Calculate broadcast address
+        var broadcastOctets = new List<int>();
+        for (int i = 0; i < 4; i++)
+        {
+            broadcastOctets.Add(ipOctets[i] | (255 - maskOctets[i]));
+        }
+
+        // First usable IP (network address + 1)
+        var firstUsable = new List<int>(networkOctets);
+        firstUsable[3]++;
+
+        // Last usable IP (broadcast address - 1)
+        var lastUsable = new List<int>(broadcastOctets);
+        lastUsable[3]--;
+
+        return (
+            string.Join(".", firstUsable),
+            string.Join(".", lastUsable)
+        );
+    }
+
+    private (string ip, int mask) ParseIpWithSubnet(string input)
+    {
+        var parts = input.Split('/');
+        if (parts.Length != 2) throw new ArgumentException("Invalid format");
+        
+        return (parts[0], int.Parse(parts[1]));
+    }
+
+    private string GetNetwork(string ip, int mask)
+    {
+        var ipOctets = ip.Split('.').Select(int.Parse).ToList();
+        var maskOctets = GetSubnetMaskString(mask).Split('.').Select(int.Parse).ToList();
+        var networkOctets = new List<int>();
+
+        for (int i = 0; i < 4; i++)
+        {
+            networkOctets.Add(ipOctets[i] & maskOctets[i]);
+        }
+
+        return string.Join(".", networkOctets);
+    }
+
+    private string ConvertIpToHex()
+    {
+        var octets = new[] { HexOctet1, HexOctet2, HexOctet3, HexOctet4 };
+        return string.Join(".", octets.Select(o => o.ToString("X2")));
+    }
+
+    private string ConvertHexToIp()
+    {
+        try
+        {
+            var parts = HexToConvert.Split('.');
+            if (parts.Length != 4) return "Ugyldigt format. Brug format: XX.XX.XX.XX";
+
+            var octets = parts.Select(p => Convert.ToInt32(p, 16));
+            return string.Join(".", octets);
+        }
+        catch
+        {
+            return "Ugyldig hexadecimal værdi";
+        }
+    }
+
+    private List<(string dec, string hex, string bin)> GetConversionTable()
+    {
+        var table = new List<(string, string, string)>();
+        // Vi viser kun nogle få eksempler i tabellen
+        var importantNumbers = new[] { 0, 1, 2, 10, 16, 32, 64, 128, 192, 224, 240, 248, 252, 254, 255 };
+        
+        foreach (var num in importantNumbers)
+        {
+            table.Add((
+                num.ToString(),
+                num.ToString("X2"),
+                Convert.ToString(num, 2).PadLeft(8, '0')
+            ));
+        }
+        
+        return table;
+    }
+}
