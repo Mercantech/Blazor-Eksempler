@@ -34,6 +34,30 @@
                     <p class="fw-bold">Binær repræsentation:</p>
                     <div class="alert alert-info">@BinaryIpAddress</div>
                 </div>
+                <div class="mt-2">
+                    <p class="fw-bold">Binær er baseret på potenser af 2:</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Position</th>
+                                    <th>2^x</th>
+                                    <th>Værdi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 7; i >= 0; i--)
+                                {
+                                    <tr>
+                                        <td>@(7-i)</td>
+                                        <td>2^@i</td>
+                                        <td>@converterList[7-i]</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <!-- Binær til IP sektion -->
