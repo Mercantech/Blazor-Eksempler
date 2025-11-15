@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: blazor-postgres
+    environment:
+      POSTGRES_DB: blazor_db
+      POSTGRES_USER: blazor_user
+      POSTGRES_PASSWORD: blazor_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blazor_user -d blazor_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  blazor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blazor-app
+    ports:
+      - "11031:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=blazor_db;Username=blazor_user;Password=blazor_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
